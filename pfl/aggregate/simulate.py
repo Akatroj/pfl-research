@@ -66,13 +66,14 @@ class SimulatedBackend(Backend):
         ``p ~ Uniform(0,max_overshoot_fraction)``.
     """
 
-    def __init__(self,
-                 training_data: FederatedDatasetBase,
-                 val_data: FederatedDatasetBase,
-                 postprocessors: Optional[List[Postprocessor]] = None,
-                 aggregator: Optional[Aggregator] = None,
-                 max_overshoot_fraction: float = 0.0):
-
+    def __init__(
+        self,
+        training_data: FederatedDatasetBase,
+        val_data: FederatedDatasetBase,
+        postprocessors: Optional[List[Postprocessor]] = None,
+        aggregator: Optional[Aggregator] = None,
+        max_overshoot_fraction: float = 0.0,
+    ):
         super().__init__()
         self._training_dataset = training_data
         self._val_dataset = val_data
@@ -125,72 +126,74 @@ class SimulatedBackend(Backend):
             ``total weight`` is the denominator for a potentially weighted
             aggregation.
         """
-        cohort_size = central_context.cohort_size
-        population = central_context.population
-        # Simulate overshooting the target number of users.
-        # Keep consistent across workers with central seed.
-        overshoot_seed = self._random_state.randint(0, 2**32, dtype=np.uint32)
-        with NumpySeedScope(overshoot_seed):
-            overshoot_cohort_size = cohort_size * (
-                1. + self._max_overshoot_fraction)
-            cohort_size = int(
-                math.floor(
-                    np.random.uniform(cohort_size, overshoot_cohort_size)))
+        (
+            cohort_size,
+            population,
+            selected_dataset,
+            num_users_trained,
+            num_total_datapoints,
+            total_weight,
+            user_metrics,
+            server_statistics,
+        ) = self.init_variables(central_context)
 
-        selected_dataset = self._training_dataset if population == Population.TRAIN else self._val_dataset
-        num_users_trained = 0
-        num_total_datapoints = Weighted(0, 0)
-        total_weight = None
-        user_metrics = Zero
+        for user_dataset, local_seed in selected_dataset.get_cohort(cohort_size):
+            user_statistics, metrics_one_user = training_algorithm.simulate_one_user(
+                model, user_dataset, central_context
+            )
 
-        server_statistics = None
+            total_weight, server_statistics = self.get_user_metrics(
+                num_users_trained,
+                num_total_datapoints,
+                total_weight,
+                user_metrics,
+                server_statistics,
+                user_dataset,
+                local_seed,
+                user_statistics,
+                metrics_one_user,
+            )
 
-        for user_dataset, local_seed in selected_dataset.get_cohort(
-                cohort_size):
+        model_update, total_metrics = self.get_model_update_and_metrics(
+            central_context,
+            population,
+            num_users_trained,
+            num_total_datapoints,
+            total_weight,
+            user_metrics,
+            server_statistics,
+        )
 
-            user_statistics, metrics_one_user = (
-                training_algorithm.simulate_one_user(model, user_dataset,
-                                                     central_context))
+        model_update = self.apply_differential_privacy(central_context, model_update, total_metrics)
 
-            user_context = UserContext(num_datapoints=len(user_dataset),
-                                       seed=local_seed,
-                                       user_id=user_dataset.user_id,
-                                       metrics=metrics_one_user)
+        return model_update, total_metrics
 
-            num_total_datapoints += Weighted.from_unweighted(
-                user_context.num_datapoints)
+    def apply_differential_privacy(self, central_context, model_update, total_metrics):
+        if model_update is not None:
+            # Apply central DP to aggregated statistics.
+            # Reverse the order when postprocessing on server
+            for p in self._postprocessors[::-1]:
+                (model_update, postprocessor_metrics) = p.postprocess_server(
+                    stats=model_update, central_context=central_context, aggregate_metrics=total_metrics
+                )
+                total_metrics |= postprocessor_metrics
+            total_metrics[get_num_params_weight_name()] = model_update.num_parameters
 
-            if user_statistics is not None:
+        return model_update
 
-                if isinstance(user_statistics, WeightedStatistics):
-                    current_weight = Weighted.from_unweighted(
-                        user_statistics.weight)
-                    if total_weight is None:
-                        total_weight = current_weight
-                    else:
-                        total_weight += current_weight
-
-                for p in self._postprocessors:
-                    (user_statistics,
-                     postprocessor_metrics) = p.postprocess_one_user(
-                         stats=user_statistics, user_context=user_context)
-                    metrics_one_user |= postprocessor_metrics
-
-                if server_statistics is None:
-                    user_statistics = user_statistics.apply_elementwise(
-                        get_ops().clone)
-                server_statistics = self._aggregator.accumulate(
-                    accumulated=server_statistics, user_stats=user_statistics)
-
-            user_metrics += metrics_one_user
-
-            num_users_trained += 1
-
+    def get_model_update_and_metrics(
+        self,
+        central_context,
+        population,
+        num_users_trained,
+        num_total_datapoints,
+        total_weight,
+        user_metrics,
+        server_statistics,
+    ):
         worker_metrics = Metrics()
-        worker_metrics[get_num_devices_weight_name(
-            population)] = num_users_trained
-        worker_metrics[get_num_datapoints_weight_name(
-            population)] = num_total_datapoints
+        worker_metrics[get_num_devices_weight_name(population)] = num_users_trained
+        worker_metrics[get_num_datapoints_weight_name(population)] = num_total_datapoints
         worker_metrics |= user_metrics
         if total_weight is not None:
             worker_metrics[get_total_weight_name(population)] = total_weight
@@ -201,26 +204,83 @@ class SimulatedBackend(Backend):
                 model_update, total_metrics = self._aggregator.worker_reduce(
                     aggregated_worker_stats=server_statistics,
                     central_context=central_context,
-                    aggregated_worker_metrics=worker_metrics)
+                    aggregated_worker_metrics=worker_metrics,
+                )
             else:
                 model_update = server_statistics
                 total_metrics = self._aggregator.worker_reduce_metrics_only(
-                    central_context=central_context,
-                    aggregated_worker_metrics=worker_metrics)
+                    central_context=central_context, aggregated_worker_metrics=worker_metrics
+                )
         else:
             model_update = server_statistics
             total_metrics = worker_metrics
-
-        if model_update is not None:
-            # Apply central DP to aggregated statistics.
-            # Reverse the order when postprocessing on server
-            for p in self._postprocessors[::-1]:
-                (model_update, postprocessor_metrics) = p.postprocess_server(
-                    stats=model_update,
-                    central_context=central_context,
-                    aggregate_metrics=total_metrics)
-                total_metrics |= postprocessor_metrics
-            total_metrics[
-                get_num_params_weight_name()] = model_update.num_parameters
-
         return model_update, total_metrics
+
+    def get_user_metrics(
+        self,
+        num_users_trained,
+        num_total_datapoints,
+        total_weight,
+        user_metrics,
+        server_statistics,
+        user_dataset,
+        local_seed,
+        user_statistics,
+        metrics_one_user,
+    ):
+        user_context = UserContext(
+            num_datapoints=len(user_dataset), seed=local_seed, user_id=user_dataset.user_id, metrics=metrics_one_user
+        )
+
+        num_total_datapoints += Weighted.from_unweighted(user_context.num_datapoints)
+
+        if user_statistics is not None:
+            if isinstance(user_statistics, WeightedStatistics):
+                current_weight = Weighted.from_unweighted(user_statistics.weight)
+                if total_weight is None:
+                    total_weight = current_weight
+                else:
+                    total_weight += current_weight
+
+            for p in self._postprocessors:
+                (user_statistics, postprocessor_metrics) = p.postprocess_one_user(
+                    stats=user_statistics, user_context=user_context
+                )
+                metrics_one_user |= postprocessor_metrics
+
+            if server_statistics is None:
+                user_statistics = user_statistics.apply_elementwise(get_ops().clone)
+            server_statistics = self._aggregator.accumulate(accumulated=server_statistics, user_stats=user_statistics)
+
+        user_metrics += metrics_one_user
+
+        num_users_trained += 1
+        return total_weight, server_statistics
+
+    def init_variables(self, central_context):
+        cohort_size = central_context.cohort_size
+        population = central_context.population
+        # Simulate overshooting the target number of users.
+        # Keep consistent across workers with central seed.
+        overshoot_seed = self._random_state.randint(0, 2**32, dtype=np.uint32)
+        with NumpySeedScope(overshoot_seed):
+            overshoot_cohort_size = cohort_size * (1.0 + self._max_overshoot_fraction)
+            cohort_size = int(math.floor(np.random.uniform(cohort_size, overshoot_cohort_size)))
+
+        selected_dataset = self._training_dataset if population == Population.TRAIN else self._val_dataset
+        num_users_trained = 0
+        num_total_datapoints = Weighted(0, 0)
+        total_weight = None
+        user_metrics = Zero
+
+        server_statistics = None
+        return (
+            cohort_size,
+            population,
+            selected_dataset,
+            num_users_trained,
+            num_total_datapoints,
+            total_weight,
+            user_metrics,
+            server_statistics,
+        )

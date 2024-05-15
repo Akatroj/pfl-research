@@ -2,6 +2,7 @@
 """
 Algorithms of base class :class:`~pfl.algorithm.base.FederatedAlgorithm` implement local training of models and processing of central model updates. It is these two parts of the end-to-end training loop that define the behaviour of a specific federated algorithm. The remaining parts define the private federated learning framework itself and do not change with different training algorithms.
 """
+
 import json
 import logging
 import os
@@ -34,10 +35,9 @@ from . import algorithm_utils
 logger = logging.getLogger(__name__)
 
 
-class FederatedAlgorithm(Saveable,
-                         Generic[AlgorithmHyperParamsType,
-                                 ModelHyperParamsType, ModelType,
-                                 StatisticsType, AbstractDatasetType]):
+class FederatedAlgorithm(
+    Saveable, Generic[AlgorithmHyperParamsType, ModelHyperParamsType, ModelType, StatisticsType, AbstractDatasetType]
+):
     """
     Base class for federated algorithms.
 
@@ -71,29 +71,25 @@ class FederatedAlgorithm(Saveable,
     def __init__(self):
         # The algorithm needs to keep a random state for any central random
         # operations.
-        self._random_state = np.random.RandomState(
-            np.random.randint(0, 2**32, dtype=np.uint32))
+        self._random_state = np.random.RandomState(np.random.randint(0, 2**32, dtype=np.uint32))
         self._current_central_iteration = 0
 
     def _get_seed(self):
         return self._random_state.randint(0, 2**32, dtype=np.uint32)
 
     def save(self, dir_path: str) -> None:
-        state_path = os.path.join(dir_path, 'algorithm_checkpoint.json')
-        with open(state_path, 'w') as f:
-            json.dump(
-                {'current_central_iteration': self._current_central_iteration},
-                f)
+        state_path = os.path.join(dir_path, "algorithm_checkpoint.json")
+        with open(state_path, "w") as f:
+            json.dump({"current_central_iteration": self._current_central_iteration}, f)
 
     def load(self, dir_path: str) -> None:
-        state_path = os.path.join(dir_path, 'algorithm_checkpoint.json')
+        state_path = os.path.join(dir_path, "algorithm_checkpoint.json")
         if not os.path.exists(state_path):
             raise CheckpointNotFoundError(state_path)
         with open(state_path) as f:
             state = json.load(f)
             # Resume the next iteration.
-            self._current_central_iteration = state[
-                'current_central_iteration'] + 1
+            self._current_central_iteration = state["current_central_iteration"] + 1
 
     @abstractmethod
     def get_next_central_contexts(
@@ -103,17 +99,19 @@ class FederatedAlgorithm(Saveable,
         algorithm_params: AlgorithmHyperParamsType,
         model_train_params: ModelHyperParamsType,
         model_eval_params: Optional[ModelHyperParamsType] = None,
-    ) -> Tuple[Optional[Tuple[CentralContext[
-            AlgorithmHyperParamsType, ModelHyperParamsType], ...]], ModelType,
-               Metrics]:
+    ) -> Tuple[
+        Optional[Tuple[CentralContext[AlgorithmHyperParamsType, ModelHyperParamsType], ...]], ModelType, Metrics
+    ]:
         pass
 
     @abstractmethod
     def process_aggregated_statistics(
-            self, central_context: CentralContext[AlgorithmHyperParamsType,
-                                                  ModelHyperParamsType],
-            aggregate_metrics: Metrics, model: ModelType,
-            statistics: StatisticsType) -> Tuple[ModelType, Metrics]:
+        self,
+        central_context: CentralContext[AlgorithmHyperParamsType, ModelHyperParamsType],
+        aggregate_metrics: Metrics,
+        model: ModelType,
+        statistics: StatisticsType,
+    ) -> Tuple[ModelType, Metrics]:
         """
         The server-side part of the computation.
 
@@ -143,10 +141,13 @@ class FederatedAlgorithm(Saveable,
         pass
 
     def process_aggregated_statistics_from_all_contexts(
-            self, stats_context_pairs: Tuple[Tuple[
-                CentralContext[AlgorithmHyperParamsType, ModelHyperParamsType],
-                StatisticsType], ...], aggregate_metrics: Metrics,
-            model: ModelType) -> Tuple[ModelType, Metrics]:
+        self,
+        stats_context_pairs: Tuple[
+            Tuple[CentralContext[AlgorithmHyperParamsType, ModelHyperParamsType], StatisticsType], ...
+        ],
+        aggregate_metrics: Metrics,
+        model: ModelType,
+    ) -> Tuple[ModelType, Metrics]:
         """
         Override this method if the algorithm you are developing
         produces aggregated statistics from multiple cohorts using multiple
@@ -174,17 +175,17 @@ class FederatedAlgorithm(Saveable,
                 "The algorithm received model statistics from "
                 "multiple cohorts. You need to override "
                 "`process_aggregated_statistics_from_all_contexts` to handle "
-                "the multiple results.")
+                "the multiple results."
+            )
 
-        (central_context, statistics), = stats_context_pairs
-        return self.process_aggregated_statistics(central_context,
-                                                  aggregate_metrics, model,
-                                                  statistics)
+        ((central_context, statistics),) = stats_context_pairs
+        return self.process_aggregated_statistics(central_context, aggregate_metrics, model, statistics)
 
     def simulate_one_user(
-        self, model: ModelType, user_dataset: AbstractDatasetType,
-        central_context: CentralContext[AlgorithmHyperParamsType,
-                                        ModelHyperParamsType]
+        self,
+        model: ModelType,
+        user_dataset: AbstractDatasetType,
+        central_context: CentralContext[AlgorithmHyperParamsType, ModelHyperParamsType],
     ) -> Tuple[Optional[StatisticsType], Metrics]:
         """
         Simulate the client-side part of the computation.
@@ -211,15 +212,17 @@ class FederatedAlgorithm(Saveable,
         """
         raise NotImplementedError
 
-    def run(self,
-            algorithm_params: AlgorithmHyperParamsType,
-            backend: Backend,
-            model: ModelType,
-            model_train_params: ModelHyperParamsType,
-            model_eval_params: Optional[ModelHyperParamsType] = None,
-            callbacks: Optional[List[TrainingProcessCallback]] = None,
-            *,
-            send_metrics_to_platform: bool = True) -> ModelType:
+    def run(
+        self,
+        algorithm_params: AlgorithmHyperParamsType,
+        backend: Backend,
+        model: ModelType,
+        model_train_params: ModelHyperParamsType,
+        model_eval_params: Optional[ModelHyperParamsType] = None,
+        callbacks: Optional[List[TrainingProcessCallback]] = None,
+        *,
+        send_metrics_to_platform: bool = True,
+    ) -> ModelType:
         """
         Orchestrate the federated computation.
 
@@ -250,13 +253,11 @@ class FederatedAlgorithm(Saveable,
         default_callbacks = get_platform().get_default_callbacks()
         for default_callback in default_callbacks:
             # Add default callback if it is not in the provided callbacks
-            if all(
-                    type(callback) != type(default_callback)
-                    for callback in callbacks):
-                logger.debug(f'Adding {default_callback}')
+            if all(type(callback) != type(default_callback) for callback in callbacks):
+                logger.debug(f"Adding {default_callback}")
                 callbacks.append(default_callback)
             else:
-                logger.debug(f'Not adding duplicate {default_callback}')
+                logger.debug(f"Not adding duplicate {default_callback}")
 
         on_train_metrics = Metrics()
         for callback in callbacks:
@@ -264,13 +265,13 @@ class FederatedAlgorithm(Saveable,
 
         central_contexts = None
         while True:
+            # isntrukcja co ma się dziać
             # Step 1
             # Get instructions from algorithm what to run next.
             # Can be multiple queries to cohorts of devices.
-            (new_central_contexts, model,
-             all_metrics) = self.get_next_central_contexts(
-                 model, self._current_central_iteration, algorithm_params,
-                 model_train_params, model_eval_params)
+            (new_central_contexts, model, all_metrics) = self.get_next_central_contexts(
+                model, self._current_central_iteration, algorithm_params, model_train_params, model_eval_params
+            )
             if new_central_contexts is None:
                 break
             else:
@@ -279,43 +280,42 @@ class FederatedAlgorithm(Saveable,
             if self._current_central_iteration == 0:
                 all_metrics |= on_train_metrics
 
+            # odpal uczenie u klientów (robi to simulated backend)
             # Step 2
             # Get aggregated model updates and
             # metrics from the requested queries.
-            results: List[Tuple[StatisticsType,
-                                Metrics]] = algorithm_utils.run_train_eval(
-                                    self, backend, model, central_contexts)
+            results: List[Tuple[StatisticsType, Metrics]] = algorithm_utils.run_train_eval(
+                self, backend, model, central_contexts
+            )
 
             # Step 3
             # For each query result, accumulate metrics and
             # let model handle statistics result if query had any.
             stats_context_pairs = []
-            for central_context, (stats,
-                                  metrics) in zip(central_contexts, results):
+            for central_context, (stats, metrics) in zip(central_contexts, results):
                 all_metrics |= metrics
                 if stats is not None:
                     stats_context_pairs.append((central_context, stats))
             # Process statistics and get new model.
-            (model, update_metrics
-             ) = self.process_aggregated_statistics_from_all_contexts(
-                 tuple(stats_context_pairs), all_metrics, model)
+
+            # wazne: agregacja sie tutaj dzieje.
+            (model, update_metrics) = self.process_aggregated_statistics_from_all_contexts(
+                tuple(stats_context_pairs), all_metrics, model
+            )
 
             all_metrics |= update_metrics
 
             # Step 4
             # End-of-iteration callbacks
             for callback in callbacks:
-                stop_signal, callback_metrics = (
-                    callback.after_central_iteration(
-                        all_metrics,
-                        model,
-                        central_iteration=self._current_central_iteration))
+                stop_signal, callback_metrics = callback.after_central_iteration(
+                    all_metrics, model, central_iteration=self._current_central_iteration
+                )
                 all_metrics |= callback_metrics
                 should_stop |= stop_signal
 
             if send_metrics_to_platform:
-                get_platform().consume_metrics(
-                    all_metrics, iteration=self._current_central_iteration)
+                get_platform().consume_metrics(all_metrics, iteration=self._current_central_iteration)
 
             if should_stop:
                 break
@@ -344,22 +344,21 @@ class NNAlgorithmParams(AlgorithmHyperParams):
     :param val_cohort_size:
         Cohort size for evaluation on validation users.
     """
+
     central_num_iterations: int
     evaluation_frequency: int
     train_cohort_size: HyperParamClsOrInt
     val_cohort_size: Optional[int]
 
 
-NNAlgorithmParamsType = TypeVar('NNAlgorithmParamsType',
-                                bound=NNAlgorithmParams)
+NNAlgorithmParamsType = TypeVar("NNAlgorithmParamsType", bound=NNAlgorithmParams)
 
 
-class FederatedNNAlgorithm(FederatedAlgorithm[NNAlgorithmParamsType,
-                                              ModelHyperParamsType,
-                                              StatefulModelType,
-                                              StatisticsType,
-                                              AbstractDatasetType]):
-
+class FederatedNNAlgorithm(
+    FederatedAlgorithm[
+        NNAlgorithmParamsType, ModelHyperParamsType, StatefulModelType, StatisticsType, AbstractDatasetType
+    ]
+):
     def __init__(self):
         super().__init__()
         # Just a placeholder of tensors to get_parameters faster.
@@ -367,10 +366,11 @@ class FederatedNNAlgorithm(FederatedAlgorithm[NNAlgorithmParamsType,
 
     @abstractmethod
     def train_one_user(
-        self, initial_model_state: StatisticsType, model: StatefulModelType,
+        self,
+        initial_model_state: StatisticsType,
+        model: StatefulModelType,
         user_dataset: AbstractDatasetType,
-        central_context: CentralContext[NNAlgorithmParamsType,
-                                        ModelHyperParamsType]
+        central_context: CentralContext[NNAlgorithmParamsType, ModelHyperParamsType],
     ) -> Tuple[StatisticsType, Metrics]:
         pass
 
@@ -381,9 +381,9 @@ class FederatedNNAlgorithm(FederatedAlgorithm[NNAlgorithmParamsType,
         algorithm_params: NNAlgorithmParamsType,
         model_train_params: ModelHyperParamsType,
         model_eval_params: Optional[ModelHyperParamsType] = None,
-    ) -> Tuple[Optional[Tuple[CentralContext[NNAlgorithmParamsType,
-                                             ModelHyperParamsType], ...]],
-               StatefulModelType, Metrics]:
+    ) -> Tuple[
+        Optional[Tuple[CentralContext[NNAlgorithmParamsType, ModelHyperParamsType], ...]], StatefulModelType, Metrics
+    ]:
         if iteration == 0:
             self._initial_model_state = None
 
@@ -392,25 +392,22 @@ class FederatedNNAlgorithm(FederatedAlgorithm[NNAlgorithmParamsType,
             return None, model, Metrics()
 
         do_evaluation = iteration % algorithm_params.evaluation_frequency == 0
-        static_model_train_params: ModelHyperParamsType = \
-            model_train_params.static_clone()
+        static_model_train_params: ModelHyperParamsType = model_train_params.static_clone()
         static_model_eval_params: Optional[ModelHyperParamsType]
-        static_model_eval_params = None if model_eval_params is None else model_eval_params.static_clone(
-        )
+        static_model_eval_params = None if model_eval_params is None else model_eval_params.static_clone()
 
-        configs: List[CentralContext[
-            NNAlgorithmParamsType, ModelHyperParamsType]] = [
-                CentralContext(
-                    current_central_iteration=iteration,
-                    do_evaluation=do_evaluation,
-                    cohort_size=get_param_value(
-                        algorithm_params.train_cohort_size),
-                    population=Population.TRAIN,
-                    model_train_params=static_model_train_params,
-                    model_eval_params=static_model_eval_params,
-                    algorithm_params=algorithm_params.static_clone(),
-                    seed=self._get_seed())
-            ]
+        configs: List[CentralContext[NNAlgorithmParamsType, ModelHyperParamsType]] = [
+            CentralContext(
+                current_central_iteration=iteration,
+                do_evaluation=do_evaluation,
+                cohort_size=get_param_value(algorithm_params.train_cohort_size),
+                population=Population.TRAIN,
+                model_train_params=static_model_train_params,
+                model_eval_params=static_model_eval_params,
+                algorithm_params=algorithm_params.static_clone(),
+                seed=self._get_seed(),
+            )
+        ]
         if do_evaluation and algorithm_params.val_cohort_size:
             configs.append(
                 CentralContext(
@@ -421,14 +418,17 @@ class FederatedNNAlgorithm(FederatedAlgorithm[NNAlgorithmParamsType,
                     model_train_params=static_model_train_params,
                     model_eval_params=static_model_eval_params,
                     algorithm_params=algorithm_params.static_clone(),
-                    seed=self._get_seed()))
+                    seed=self._get_seed(),
+                )
+            )
 
         return tuple(configs), model, Metrics()
 
     def simulate_one_user(
-        self, model: StatefulModelType, user_dataset: AbstractDatasetType,
-        central_context: CentralContext[NNAlgorithmParamsType,
-                                        ModelHyperParamsType]
+        self,
+        model: StatefulModelType,
+        user_dataset: AbstractDatasetType,
+        central_context: CentralContext[NNAlgorithmParamsType, ModelHyperParamsType],
     ) -> Tuple[Optional[StatisticsType], Metrics]:
         """
         If population is ``Population.TRAIN``, trains one user and returns the
@@ -439,40 +439,31 @@ class FederatedNNAlgorithm(FederatedAlgorithm[NNAlgorithmParamsType,
         If population is not ``Population.TRAIN``, does only evaluation.
         """
         # pytype: disable=duplicate-keyword-argument
-        initial_metrics_format_fn = lambda n: TrainMetricName(
-            n, central_context.population, after_training=False)
-        final_metrics_format_fn = lambda n: TrainMetricName(
-            n, central_context.population, after_training=True)
+        initial_metrics_format_fn = lambda n: TrainMetricName(n, central_context.population, after_training=False)
+        final_metrics_format_fn = lambda n: TrainMetricName(n, central_context.population, after_training=True)
         # pytype: enable=duplicate-keyword-argument
 
         metrics = Metrics()
         # Train local user.
 
         if central_context.population == Population.TRAIN:
-
             if central_context.do_evaluation:
-                metrics |= model.evaluate(user_dataset,
-                                          initial_metrics_format_fn,
-                                          central_context.model_eval_params)
+                metrics |= model.evaluate(user_dataset, initial_metrics_format_fn, central_context.model_eval_params)
 
-            self._initial_model_state = model.get_parameters(
-                self._initial_model_state)
+            self._initial_model_state = model.get_parameters(self._initial_model_state)
             statistics, train_metrics = self.train_one_user(
-                self._initial_model_state, model, user_dataset,
-                central_context)
+                self._initial_model_state, model, user_dataset, central_context
+            )
             metrics |= train_metrics
 
             # Evaluate after local training.
             if central_context.do_evaluation:
-                metrics |= model.evaluate(user_dataset,
-                                          final_metrics_format_fn,
-                                          central_context.model_eval_params)
+                metrics |= model.evaluate(user_dataset, final_metrics_format_fn, central_context.model_eval_params)
 
             model.set_parameters(self._initial_model_state)
             return statistics, metrics
         else:
-            metrics = model.evaluate(user_dataset, initial_metrics_format_fn,
-                                     central_context.model_eval_params)
+            metrics = model.evaluate(user_dataset, initial_metrics_format_fn, central_context.model_eval_params)
             return None, metrics
 
 
@@ -499,20 +490,22 @@ class PersonalizedNNAlgorithmParams(NNAlgorithmParams):
         number of data samples for validation.
         A good starting value can be ``1`` in many cases.
     """
+
     val_split_fraction: float
     min_train_size: int
     min_val_size: int
 
 
 class PersonalizedNNAlgorithm(
-        FederatedNNAlgorithm[PersonalizedNNAlgorithmParams,
-                             ModelHyperParamsType, StatefulModelType,
-                             StatisticsType, AbstractDatasetType]):
-
+    FederatedNNAlgorithm[
+        PersonalizedNNAlgorithmParams, ModelHyperParamsType, StatefulModelType, StatisticsType, AbstractDatasetType
+    ]
+):
     def simulate_one_user(
-        self, model: StatefulModelType, user_dataset: AbstractDatasetType,
-        central_context: CentralContext[PersonalizedNNAlgorithmParams,
-                                        ModelHyperParamsType]
+        self,
+        model: StatefulModelType,
+        user_dataset: AbstractDatasetType,
+        central_context: CentralContext[PersonalizedNNAlgorithmParams, ModelHyperParamsType],
     ) -> Tuple[Optional[StatisticsType], Metrics]:
         """
         If trains one user and returns the model difference before and after
@@ -527,48 +520,37 @@ class PersonalizedNNAlgorithm(
         """
         algo_params = central_context.algorithm_params
         train_dataset, val_dataset = user_dataset.split(
-            algo_params.val_split_fraction, algo_params.min_train_size,
-            algo_params.min_val_size)
+            algo_params.val_split_fraction, algo_params.min_train_size, algo_params.min_val_size
+        )
 
         # pytype: disable=duplicate-keyword-argument,wrong-arg-count
-        initial_metrics_format_fn = lambda n: TrainMetricName(
-            n, central_context.population, after_training=False)
-        final_metrics_format_fn = lambda n: TrainMetricName(
-            n, central_context.population, after_training=True)
+        initial_metrics_format_fn = lambda n: TrainMetricName(n, central_context.population, after_training=False)
+        final_metrics_format_fn = lambda n: TrainMetricName(n, central_context.population, after_training=True)
         initial_val_metrics_format_fn = lambda n: TrainMetricName(
-            n,
-            central_context.population,
-            after_training=False,
-            local_partition='val')
+            n, central_context.population, after_training=False, local_partition="val"
+        )
         final_val_metrics_format_fn = lambda n: TrainMetricName(
-            n,
-            central_context.population,
-            after_training=True,
-            local_partition='val')
+            n, central_context.population, after_training=True, local_partition="val"
+        )
         # pytype: enable=duplicate-keyword-argument,wrong-arg-count
 
         metrics = Metrics()
 
         if central_context.do_evaluation:
             # Evaluate on train and eval partition before training.
-            metrics |= model.evaluate(train_dataset, initial_metrics_format_fn,
-                                      central_context.model_eval_params)
-            metrics |= model.evaluate(val_dataset,
-                                      initial_val_metrics_format_fn,
-                                      central_context.model_eval_params)
+            metrics |= model.evaluate(train_dataset, initial_metrics_format_fn, central_context.model_eval_params)
+            metrics |= model.evaluate(val_dataset, initial_val_metrics_format_fn, central_context.model_eval_params)
 
-        self._initial_model_state = model.get_parameters(
-            self._initial_model_state)
+        self._initial_model_state = model.get_parameters(self._initial_model_state)
         statistics, train_metrics = self.train_one_user(
-            self._initial_model_state, model, train_dataset, central_context)
+            self._initial_model_state, model, train_dataset, central_context
+        )
         metrics |= train_metrics
 
         # Evaluate after local training.
         if central_context.do_evaluation:
-            metrics |= model.evaluate(train_dataset, final_metrics_format_fn,
-                                      central_context.model_eval_params)
-            metrics |= model.evaluate(val_dataset, final_val_metrics_format_fn,
-                                      central_context.model_eval_params)
+            metrics |= model.evaluate(train_dataset, final_metrics_format_fn, central_context.model_eval_params)
+            metrics |= model.evaluate(val_dataset, final_val_metrics_format_fn, central_context.model_eval_params)
 
         model.set_parameters(self._initial_model_state)
         if central_context.population != Population.TRAIN:

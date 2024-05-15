@@ -6,12 +6,12 @@ from typing import List, Tuple
 from pfl.aggregate.base import Backend
 from pfl.context import CentralContext
 from pfl.metrics import Metrics
-from pfl.model.base import Model
+from pfl.model.base import Model, FederatedAlgorithm
 from pfl.stats import StatisticsType
 
 
 def run_train_eval(
-    algorithm,
+    algorithm: FederatedAlgorithm,
     backend: Backend,
     model: Model,
     central_contexts: Tuple[CentralContext, ...],
