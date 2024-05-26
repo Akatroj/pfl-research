@@ -1,17 +1,19 @@
 # Copyright © 2023-2024 Apple Inc.
 
 import asyncio
-from typing import List, Tuple
+from typing import TYPE_CHECKING, List, Tuple
 
 from pfl.aggregate.base import Backend
 from pfl.context import CentralContext
 from pfl.metrics import Metrics
-from pfl.model.base import Model, FederatedAlgorithm
+from pfl.model.base import Model
 from pfl.stats import StatisticsType
 
+if TYPE_CHECKING:
+    from pfl.algorithm.base import FederatedAlgorithm
 
 def run_train_eval(
-    algorithm: FederatedAlgorithm,
+    algorithm: 'FederatedAlgorithm',
     backend: Backend,
     model: Model,
     central_contexts: Tuple[CentralContext, ...],
