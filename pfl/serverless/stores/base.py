@@ -15,6 +15,10 @@ class ConfigParams(NamedTuple):
     pass
 
 
+class EmptyConfigParams(ConfigParams):
+    pass
+
+
 class DataStoreConfig(NamedTuple):
     name: str
     params: ConfigParams
@@ -44,8 +48,7 @@ MetricsType = TypeVar("MetricsType", bound=Metrics)
 
 
 class ServerlessPFLStore(
-    ServerlessDataStore,
-    PFLGenericType,
+    ServerlessDataStore, Generic[AlgorithmHyperParamsType, ModelHyperParamsType, ModelType, StatisticsType, MetricsType]
 ):
     def get_for_context_getter(
         self,
