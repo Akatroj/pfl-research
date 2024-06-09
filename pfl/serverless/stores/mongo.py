@@ -1,15 +1,21 @@
+from dataclasses import dataclass
 from typing_extensions import override
 
 from pfl.serverless.stores.base import ConfigParams, DataStoreConfig, ServerlessPFLStore
 
 
+@dataclass
 class MongoConfigParams(ConfigParams):
     uri: str
 
 
+@dataclass
 class MongoStoreConfig(DataStoreConfig):
     name = "mongo"
     params: MongoConfigParams
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(self.name, self.params, *args, **kwargs)
 
 
 class MongoStore(ServerlessPFLStore):

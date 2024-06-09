@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from dataclasses import dataclass
 from typing import Generic, List, NamedTuple, Optional, Tuple, TypeVar
 
 from pfl.aggregate.base import Backend
@@ -7,19 +8,21 @@ from pfl.context import CentralContext
 from pfl.hyperparam.base import AlgorithmHyperParamsType, ModelHyperParamsType
 from pfl.metrics import Metrics
 from pfl.model.base import ModelType
-from pfl.serverless.stores.type_utils import PFLGenericType
 from pfl.stats import StatisticsType
 
 
-class ConfigParams(NamedTuple):
+@dataclass
+class ConfigParams:
     pass
 
 
+@dataclass
 class EmptyConfigParams(ConfigParams):
     pass
 
 
-class DataStoreConfig(NamedTuple):
+@dataclass
+class DataStoreConfig:
     name: str
     params: ConfigParams
 

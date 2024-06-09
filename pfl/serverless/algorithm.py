@@ -12,6 +12,9 @@ from pfl.hyperparam.base import AlgorithmHyperParamsType, ModelHyperParamsType
 from pfl.internal.platform.selector import get_platform
 from pfl.metrics import Metrics
 from pfl.model.base import ModelType
+from pfl.serverless.context_getter import ContextGetter
+from pfl.serverless.stores.simple import SimpleStoreConfig
+from pfl.serverless.stores.utils import get_store
 from pfl.stats import StatisticsType
 
 logger = logging.getLogger(__name__)
@@ -32,7 +35,9 @@ class ServerlessFederatedAlgorithm(
         send_metrics_to_platform: bool = True,
     ) -> ModelType:
         callbacks, should_stop, on_train_metrics = self._init(model, callbacks)
+        xd = 1
         while True:
+            print(xd)
             # Step 1
             # Get instructions from algorithm what to run next.
             # Can be multiple queries to cohorts of devices.
@@ -43,6 +48,20 @@ class ServerlessFederatedAlgorithm(
             (new_central_contexts, model, all_metrics) = self.get_next_central_contexts(
                 model, self._current_central_iteration, algorithm_params, model_train_params, model_eval_params
             )
+            # config = SimpleStoreConfig()
+            # store = get_store(config)
+
+            # store.save_data(
+            #     **{
+            #         "model": model,
+            #         "iteration": self._current_central_iteration,
+            #         "algorithm_params": algorithm_params,
+            #         "model_train_params": model_train_params,
+            #         "model_eval_params": model_eval_params,
+            #     }
+            # )
+
+            # (new_central_contexts, model, all_metrics) = ContextGetter(config).run_function(self)
             if new_central_contexts is None:
                 break
             else:
@@ -102,3 +121,22 @@ class ServerlessFederatedAlgorithm(
         central_context, aggregate_metrics, model, statistics = self._get_data()
 
         self.process_aggregated_statistics(central_context, aggregate_metrics, model, statistics)
+
+    def _init(self, model, callbacks):
+        self._current_central_iteration = 0
+        should_stop = False
+        callbacks = list(callbacks or [])
+        default_callbacks = get_platform().get_default_callbacks()
+        for default_callback in default_callbacks:
+            # Add default callback if it is not in the provided callbacks
+            if all(type(callback) != type(default_callback) for callback in callbacks):
+                logger.debug(f"Adding {default_callback}")
+                callbacks.append(default_callback)
+            else:
+                logger.debug(f"Not adding duplicate {default_callback}")
+
+        on_train_metrics = Metrics()
+        for callback in callbacks:
+            on_train_metrics |= callback.on_train_begin(model=model)
+
+        return callbacks, should_stop, on_train_metrics
