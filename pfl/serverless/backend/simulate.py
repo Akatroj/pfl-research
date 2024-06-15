@@ -143,7 +143,7 @@ class SimulatedServerlessBackend(ServerlessBackend):
                 model, user_dataset, central_context
             )
 
-            total_weight, server_statistics = self.get_user_metrics(
+            total_weight, server_statistics, user_metrics = self.get_user_metrics(
                 num_users_trained,
                 num_total_datapoints,
                 total_weight,
@@ -256,7 +256,7 @@ class SimulatedServerlessBackend(ServerlessBackend):
         user_metrics += metrics_one_user
 
         num_users_trained += 1
-        return total_weight, server_statistics
+        return total_weight, server_statistics, user_metrics
 
     def init_variables(self, central_context):
         cohort_size = central_context.cohort_size

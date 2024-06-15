@@ -24,9 +24,9 @@ class Serverless:
         return functools.partial(self.__call__, obj)
 
     def __call__(self, *args, **kwargs):
-        if getattr(self.instance, Serverless.cold_attribute, True):
-            sleep(100)
-        setattr(self.instance, Serverless.cold_attribute, False)
+        # if getattr(self.instance, Serverless.cold_attribute, True):
+        #     sleep(0.1)
+        # setattr(self.instance, Serverless.cold_attribute, False)
         return self.func(*args, **kwargs)
 
 

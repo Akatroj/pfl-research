@@ -384,3 +384,24 @@ class TFModel(StatefulModel):
             pass
 
         return self, metrics
+
+
+    def __getstate__(self):
+        saved_state = self.__dict__.copy()
+        del saved_state["_model"]
+        del saved_state["_metrics"]
+        
+        print(saved_state.keys())
+        return [saved_state, tf.keras.saving.serialize_keras_object(self._model), {
+            key: tf.keras.metrics.serialize(value) for key, value in self._metrics.items()
+            }]
+
+    def __setstate__(self, state):
+        """
+        Restore the state from pickled state.
+        """
+        self.__dict__ = state[0]
+        self._metrics = {
+            key: tf.keras.metrics.deserialize(value) for key, value in state[2].items()
+        }
+        self._model = tf.keras.saving.deserialize_keras_object(state[1])

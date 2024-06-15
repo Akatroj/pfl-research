@@ -574,6 +574,12 @@ class Metrics:
 
         return Metrics(itertools.chain(self, other))
 
+    def __getstate__(self):
+        return self._hash_to_keyvalue
+
+    def __setstate__(self, state):
+        self._hash_to_keyvalue = state
+
     def to_simple_dict(
         self,
         force_serialize_all_metrics: bool = False

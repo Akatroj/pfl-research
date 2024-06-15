@@ -3,6 +3,7 @@
 A model contains all the functionality needed for simulating federated learning experiments with
 the specific deep learning framework you have implemented your model with.
 """
+
 from abc import abstractmethod
 from typing import Callable, Generic, Optional, Tuple, TypeVar
 
@@ -12,10 +13,9 @@ from pfl.hyperparam.base import ModelHyperParamsType
 from pfl.metrics import Metrics, StringMetricName
 from pfl.stats import StatisticsType
 
-ModelType = TypeVar('ModelType', bound='Model')
-EvaluatableModelType = TypeVar('EvaluatableModelType',
-                               bound='EvaluatableModel')
-StatefulModelType = TypeVar('StatefulModelType', bound='StatefulModel')
+ModelType = TypeVar("ModelType", bound="Model")
+EvaluatableModelType = TypeVar("EvaluatableModelType", bound="EvaluatableModel")
+StatefulModelType = TypeVar("StatefulModelType", bound="StatefulModel")
 
 
 class Model(Generic[StatisticsType]):
@@ -28,9 +28,7 @@ class Model(Generic[StatisticsType]):
     """
 
     @abstractmethod
-    def apply_model_update(
-            self: ModelType,
-            statistics: StatisticsType) -> Tuple[ModelType, Metrics]:
+    def apply_model_update(self: ModelType, statistics: StatisticsType) -> Tuple[ModelType, Metrics]:
         """
         Compute updated parameters based on ``statistics``.
 
@@ -47,7 +45,6 @@ class Model(Generic[StatisticsType]):
 
 
 class EvaluatableModel(Model, Generic[StatisticsType, ModelHyperParamsType]):
-
     @property
     def allows_distributed_evaluation(self) -> Optional[bool]:
         """
@@ -67,10 +64,11 @@ class EvaluatableModel(Model, Generic[StatisticsType, ModelHyperParamsType]):
 
     @abstractmethod
     def evaluate(
-            self,
-            dataset: AbstractDatasetType,
-            name_formatting_fn: Callable[[str], StringMetricName],
-            eval_params: Optional[ModelHyperParamsType] = None) -> Metrics:
+        self,
+        dataset: AbstractDatasetType,
+        name_formatting_fn: Callable[[str], StringMetricName],
+        eval_params: Optional[ModelHyperParamsType] = None,
+    ) -> Metrics:
         """
         Evaluate performance of model on the given input data.
 
@@ -96,8 +94,7 @@ class EvaluatableModel(Model, Generic[StatisticsType, ModelHyperParamsType]):
         """
 
 
-class StatefulModel(EvaluatableModel[StatisticsType, ModelHyperParamsType],
-                    Saveable):
+class StatefulModel(EvaluatableModel[StatisticsType, ModelHyperParamsType], Saveable):
     """
     Convenience class for a model that has a fixed number of parameters
     and is stateful.
@@ -119,9 +116,7 @@ class StatefulModel(EvaluatableModel[StatisticsType, ModelHyperParamsType],
     """
 
     @abstractmethod
-    def get_model_difference(self,
-                             other_parameters: StatisticsType,
-                             clone: bool = False) -> StatisticsType:
+    def get_model_difference(self, other_parameters: StatisticsType, clone: bool = False) -> StatisticsType:
         """
         Get the model difference between the current state of the model and
         the other state given as input (i.e. current-other).
@@ -148,9 +143,7 @@ class StatefulModel(EvaluatableModel[StatisticsType, ModelHyperParamsType],
         """
 
     @abstractmethod
-    def get_parameters(
-            self,
-            placeholders: Optional[StatisticsType] = None) -> StatisticsType:
+    def get_parameters(self, placeholders: Optional[StatisticsType] = None) -> StatisticsType:
         """
         Retrieve model parameters at the current state.
         Useful if you want to restore the model to this

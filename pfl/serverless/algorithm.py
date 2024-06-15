@@ -1,5 +1,6 @@
 import logging
 from abc import abstractmethod
+import time
 from typing import Generic, List, Optional, Tuple, TypedDict, TypeVar
 
 from pfl.aggregate.base import Backend
@@ -45,23 +46,33 @@ class ServerlessFederatedAlgorithm(
             # Step 1
             # Get instructions from algorithm what to run next.
             # Can be multiple queries to cohorts of devices.
-            (new_central_contexts, model, all_metrics) = self.get_next_central_contexts(
-                model, self._current_central_iteration, algorithm_params, model_train_params, model_eval_params
-            )
-            # config = SimpleStoreConfig()
-            # store = get_store(config)
-
-            # store.save_data(
-            #     **{
-            #         "model": model,
-            #         "iteration": self._current_central_iteration,
-            #         "algorithm_params": algorithm_params,
-            #         "model_train_params": model_train_params,
-            #         "model_eval_params": model_eval_params,
-            #     }
+            # (new_central_contexts, model, all_metrics) = self.get_next_central_contexts(
+            #     model, self._current_central_iteration, algorithm_params, model_train_params, model_eval_params
             # )
+            config = SimpleStoreConfig()
+            store = get_store(config)
 
-            # (new_central_contexts, model, all_metrics) = ContextGetter(config).run_function(self)
+            now = time.time()
+            store.save_data(
+                **{
+                    "model": model,
+                    "iteration": self._current_central_iteration,
+                    "algorithm_params": algorithm_params,
+                    "model_train_params": model_train_params,
+                    "model_eval_params": model_eval_params,
+                }
+            )
+
+            print("Time to save data: ", time.time() - now)
+            now = time.time()
+
+            ContextGetter(config).run_function(self)
+
+            print("Time to run function: ", time.time() - now)
+            now = time.time()
+
+            (new_central_contexts, model, all_metrics) = store.get_from_context_getter()
+
             if new_central_contexts is None:
                 break
             else:
