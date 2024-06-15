@@ -13,6 +13,7 @@ from pfl.hyperparam import NNEvalHyperParams, NNTrainHyperParams
 from pfl.internal.ops import get_tf_major_version, tensorflow_ops
 from pfl.internal.ops.selector import set_framework_module
 from pfl.metrics import Metrics, MetricValueType, StringMetricName, Weighted, Zero
+from pfl.model import saving_utils
 from pfl.model.base import StatefulModel
 from pfl.stats import MappedVectorStatistics
 
@@ -390,18 +391,32 @@ class TFModel(StatefulModel):
         saved_state = self.__dict__.copy()
         del saved_state["_model"]
         del saved_state["_metrics"]
-        
-        print(saved_state.keys())
-        return [saved_state, tf.keras.saving.serialize_keras_object(self._model), {
+        del saved_state["_central_optimizer"]
+        model = saving_utils.save_keras_model(self._model)
+
+        metrics = {
             key: tf.keras.metrics.serialize(value) for key, value in self._metrics.items()
-            }]
+        }
+
+        optimizer = tf.keras.saving.serialize_keras_object(self._central_optimizer)
+
+        return [saved_state, model, metrics, optimizer]
 
     def __setstate__(self, state):
         """
         Restore the state from pickled state.
         """
-        self.__dict__ = state[0]
+        [saved_state, model, metrics, optimizer] = state
+        self.__dict__ = saved_state
         self._metrics = {
-            key: tf.keras.metrics.deserialize(value) for key, value in state[2].items()
+            key: tf.keras.metrics.deserialize(value) for key, value in metrics.items()
         }
-        self._model = tf.keras.saving.deserialize_keras_object(state[1])
+        self._model = saving_utils.load_keras_model(*model)
+
+        self._central_optimizer = tf.keras.saving.deserialize_keras_object(optimizer)
+
+        self.apply_model_update(
+            MappedVectorStatistics({
+                name: tf.zeros_like(variable)
+                for name, variable in self.variable_map.items()
+        }))
