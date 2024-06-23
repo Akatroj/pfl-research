@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 
-import dill
 from typing_extensions import override
 
 from pfl.serverless.stores.base import DataStoreConfig, EmptyConfigParams, ServerlessPFLStore
@@ -23,18 +22,12 @@ class SimpleStore(ServerlessPFLStore):
         super().__init__(config)
 
     @override
-    def get_data_for_key(self, key):
-        print(f"unpickling {key}")
-        print()
-        result = dill.loads(_store_data[key])
-        print(f"done unpickling {key}")
-        return result
+    def _get_data_for_key(self, key):
+        return _store_data[key]
 
     @override
-    def save_data_for_key(self, key, data) -> None:
-        print(f"pickling {key}")
-        _store_data[key] = dill.dumps(data)
-        print(f"done pickling {key}")
+    def _save_data_for_key(self, key, data) -> None:
+        _store_data[key] = data
 
 
 print(SimpleStoreConfig())

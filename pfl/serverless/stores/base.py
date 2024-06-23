@@ -1,6 +1,8 @@
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import Generic, List, NamedTuple, Optional, Tuple, TypeVar
+from typing import Generic, List, Optional, Tuple, TypeVar
+
+import dill
 
 from pfl.aggregate.base import Backend
 from pfl.algorithm.base import FederatedAlgorithm
@@ -32,12 +34,24 @@ class ServerlessDataStore:
         self.config = config
 
     @abstractmethod
-    def get_data_for_key(self, key):
+    def _get_data_for_key(self, key):
         """Get the data saved for a specific key"""
 
     @abstractmethod
-    def save_data_for_key(self, key, data) -> None:
+    def _save_data_for_key(self, key, data) -> None:
         """Save the data for a specific key"""
+
+    def get_data_for_key(self, key):
+        print(f"unpickling {key}")
+        result = dill.loads(self._get_data_for_key(key))
+        print(f"done unpickling {key}")
+        return result
+
+    def save_data_for_key(self, key, data) -> None:
+        print(f"pickling {key}")
+        pickled_data = dill.dumps(data)
+        print(f"done pickling {key}")
+        return self._save_data_for_key(key, pickled_data)
 
     def save_data(self, **kwargs):
         for key, data in kwargs.items():
@@ -82,9 +96,9 @@ class ServerlessPFLStore(
         ModelType,
         StatisticsType,
     ]:
-        keys = ["stats_context_pairs", "aggregate_metrics", "model"]
+        keys = ["stats_context_pairs", "all_metrics", "model"]
         return self._get_data_for_keys(keys)
 
     def get_from_aggregation(self) -> Tuple[ModelType, Metrics]:
-        keys = ["model", "update_metrics"]
+        keys = ["model", "all_metrics"]
         return self._get_data_for_keys(keys)

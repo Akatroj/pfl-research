@@ -13,9 +13,11 @@ from pfl.hyperparam.base import AlgorithmHyperParamsType, ModelHyperParamsType
 from pfl.internal.platform.selector import get_platform
 from pfl.metrics import Metrics
 from pfl.model.base import ModelType
+from pfl.serverless.aggregator import Aggregator
 from pfl.serverless.context_getter import ContextGetter
+
 from pfl.serverless.stores.simple import SimpleStoreConfig
-from pfl.serverless.stores.utils import get_store
+from pfl.serverless.stores.utils import create_config, get_store
 from pfl.stats import StatisticsType
 
 logger = logging.getLogger(__name__)
@@ -36,9 +38,11 @@ class ServerlessFederatedAlgorithm(
         send_metrics_to_platform: bool = True,
     ) -> ModelType:
         callbacks, should_stop, on_train_metrics = self._init(model, callbacks)
-        xd = 1
+        # config = create_config("redis", uri="redis://localhost:6379/0")
+        # config = create_config("mongo", uri="mongodb://localhost:27017")
+        config = SimpleStoreConfig()
+        store = get_store(config)
         while True:
-            print(xd)
             # Step 1
             # Get instructions from algorithm what to run next.
             # Can be multiple queries to cohorts of devices.
@@ -49,10 +53,7 @@ class ServerlessFederatedAlgorithm(
             # (new_central_contexts, model, all_metrics) = self.get_next_central_contexts(
             #     model, self._current_central_iteration, algorithm_params, model_train_params, model_eval_params
             # )
-            config = SimpleStoreConfig()
-            store = get_store(config)
 
-            now = time.time()
             store.save_data(
                 **{
                     "model": model,
@@ -63,13 +64,7 @@ class ServerlessFederatedAlgorithm(
                 }
             )
 
-            print("Time to save data: ", time.time() - now)
-            now = time.time()
-
             ContextGetter(config).run_function(self)
-
-            print("Time to run function: ", time.time() - now)
-            now = time.time()
 
             (new_central_contexts, model, all_metrics) = store.get_from_context_getter()
 
@@ -100,11 +95,18 @@ class ServerlessFederatedAlgorithm(
             # Process statistics and get new model.
 
             # wazne: agregacja sie tutaj dzieje.
-            (model, update_metrics) = self.process_aggregated_statistics_from_all_contexts(
-                tuple(stats_context_pairs), all_metrics, model
+            # (model, update_metrics) = self.process_aggregated_statistics_from_all_contexts(
+            #     tuple(stats_context_pairs), all_metrics, model
+            # )
+            # all_metrics |= update_metrics
+
+            store.save_data(
+                **{"stats_context_pairs": tuple(stats_context_pairs), "all_metrics": all_metrics, "model": model}
             )
 
-            all_metrics |= update_metrics
+            Aggregator(config).run_function(self)
+
+            model, update_metrics = store.get_from_aggregation()
 
             # Step 4
             # End-of-iteration callbacks

@@ -9,7 +9,13 @@ class ContextGetter(ServerlessFunction[None, None]):
 
     @override
     def function(self, algorithm: FederatedAlgorithm):
-        model, iteration, algorithm_params, model_train_params, model_eval_params = self._store.get_for_context_getter()
+        (
+            model,
+            iteration,
+            algorithm_params,
+            model_train_params,
+            model_eval_params,
+        ) = self._store.get_for_context_getter()
 
         (new_central_contexts, model, all_metrics) = algorithm.get_next_central_contexts(
             model, iteration, algorithm_params, model_train_params, model_eval_params
