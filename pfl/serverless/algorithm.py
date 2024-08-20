@@ -16,6 +16,7 @@ from pfl.model.base import ModelType
 from pfl.serverless.aggregator import Aggregator
 from pfl.serverless.context_getter import ContextGetter
 
+from pfl.serverless.stores.base import DataStoreConfig
 from pfl.serverless.stores.simple import SimpleStoreConfig
 from pfl.serverless.stores.utils import create_config, get_store
 from pfl.stats import StatisticsType
@@ -28,6 +29,7 @@ class ServerlessFederatedAlgorithm(
 ):
     def run(
         self,
+        config: DataStoreConfig,
         algorithm_params: AlgorithmHyperParamsType,
         backend: Backend,
         model: ModelType,
@@ -38,9 +40,7 @@ class ServerlessFederatedAlgorithm(
         send_metrics_to_platform: bool = True,
     ) -> ModelType:
         callbacks, should_stop, on_train_metrics = self._init(model, callbacks)
-        # config = create_config("redis", uri="redis://localhost:6379/0")
-        # config = create_config("mongo", uri="mongodb://localhost:27017")
-        config = SimpleStoreConfig()
+
         store = get_store(config)
         while True:
             # Step 1

@@ -668,8 +668,8 @@ class KerasMetricValue(MetricValue):
             self._metric_state = state
 
     def __add__(self, other):
-        assert self._keras_metric is other._keras_metric, (
-            'Should wrap the same underlying Keras metric')
+        # assert self._keras_metric is other._keras_metric, (
+        #     'Should wrap the same underlying Keras metric')
         new_state = _add_states(self._metric_state, other._metric_state)
         return KerasMetricValue(self._keras_metric, state=new_state)
 

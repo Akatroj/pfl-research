@@ -1,0 +1,4 @@
+@startuml
+FederatedAlgorithm -> Backend : train model on clients
+FederatedAlgorithm <- Backend : get model updates from clients
+@enduml

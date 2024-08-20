@@ -24,6 +24,9 @@ from pfl.metrics import Metrics, Weighted, Zero
 from pfl.model.base import Model
 from pfl.postprocessor.base import Postprocessor
 from pfl.serverless.backend.base import ServerlessBackend
+from pfl.serverless.client import ClientHandler
+from pfl.serverless.stores.base import DataStoreConfig
+from pfl.serverless.stores.utils import get_store
 from pfl.stats import TrainingStatistics, WeightedStatistics
 
 
@@ -69,6 +72,7 @@ class SimulatedServerlessBackend(ServerlessBackend):
 
     def __init__(
         self,
+        config: DataStoreConfig,
         training_data: FederatedDatasetBase,
         val_data: FederatedDatasetBase,
         postprocessors: Optional[List[Postprocessor]] = None,
@@ -84,6 +88,7 @@ class SimulatedServerlessBackend(ServerlessBackend):
         else:
             self._aggregator = aggregator
         self._max_overshoot_fraction = max_overshoot_fraction
+        self._datastore_config = config
 
     async def async_gather_results(
         self,
@@ -138,22 +143,32 @@ class SimulatedServerlessBackend(ServerlessBackend):
             server_statistics,
         ) = self.init_variables(central_context)
 
-        for user_dataset, local_seed in selected_dataset.get_cohort(cohort_size):
-            user_statistics, metrics_one_user = training_algorithm.simulate_one_user(
-                model, user_dataset, central_context
-            )
+        store = get_store(self._datastore_config)
 
-            total_weight, server_statistics, user_metrics = self.get_user_metrics(
-                num_users_trained,
-                num_total_datapoints,
-                total_weight,
-                user_metrics,
-                server_statistics,
-                user_dataset,
-                local_seed,
-                user_statistics,
-                metrics_one_user,
-            )
+        store.save_data(
+            **{
+                "num_users_trained": num_users_trained,
+                "num_total_datapoints": num_total_datapoints,
+                "total_weight": total_weight,
+                "user_metrics": user_metrics,
+                "server_statistics": server_statistics,
+                "central_context": central_context,
+            }
+        )
+
+        print("Starting simulation")
+        for user_dataset, local_seed in selected_dataset.get_cohort(cohort_size):
+            print(f"Starting user {user_dataset.user_id}")
+            store.save_data(**{"user_dataset": user_dataset, "local_seed": local_seed})
+            ClientHandler(self._datastore_config).run_function(training_algorithm, self)
+
+        (
+            num_users_trained,
+            num_total_datapoints,
+            total_weight,
+            user_metrics,
+            server_statistics,
+        ) = store.get_from_clients()
 
         model_update, total_metrics = self.get_model_update_and_metrics(
             central_context,

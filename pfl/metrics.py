@@ -575,11 +575,10 @@ class Metrics:
         return Metrics(itertools.chain(self, other))
 
     def __getstate__(self):
-        return self.to_vectors()
+        return self._hash_to_keyvalue
 
     def __setstate__(self, state):
-        self._hash_to_keyvalue = {}
-        self.from_vectors(state)
+        self._hash_to_keyvalue = state
 
     def to_simple_dict(
         self,

@@ -19,11 +19,6 @@ class ConfigParams:
 
 
 @dataclass
-class EmptyConfigParams(ConfigParams):
-    pass
-
-
-@dataclass
 class DataStoreConfig:
     name: str
     params: ConfigParams
@@ -57,7 +52,7 @@ class ServerlessDataStore:
         for key, data in kwargs.items():
             self.save_data_for_key(key, data)
 
-    def _get_data_for_keys(self, keys):
+    def get_data_for_keys(self, keys):
         return [self.get_data_for_key(key) for key in keys]
 
 
@@ -71,7 +66,7 @@ class ServerlessPFLStore(
         self,
     ) -> Tuple[ModelType, int, AlgorithmHyperParamsType, ModelHyperParamsType, Optional[ModelHyperParamsType]]:
         keys = ["model", "iteration", "algorithm_params", "model_train_params", "model_eval_params"]
-        return self._get_data_for_keys(keys)
+        return self.get_data_for_keys(keys)
 
     def get_from_context_getter(
         self,
@@ -79,14 +74,31 @@ class ServerlessPFLStore(
         Optional[Tuple[CentralContext[AlgorithmHyperParamsType, ModelHyperParamsType], ...]], ModelType, Metrics
     ]:
         keys = ["central_contexts", "model", "all_metrics"]
-        return self._get_data_for_keys(keys)
+        return self.get_data_for_keys(keys)
 
-    def get_for_clients(self) -> Tuple[FederatedAlgorithm, Backend, ModelType, Tuple[CentralContext, ...]]:
-        keys = ["algorithm", "backend", "model", "central_contexts"]
-        return self._get_data_for_keys(keys)
+    def get_for_clients(self):
+        keys = [
+            "num_users_trained",
+            "num_total_datapoints",
+            "total_weight",
+            "user_metrics",
+            "server_statistics",
+            "user_dataset",
+            "local_seed",
+            "central_context",
+            "model",
+        ]
+        return self.get_data_for_keys(keys)
 
     def get_from_clients(self) -> List[Tuple[StatisticsType, Metrics]]:
-        pass
+        keys = [
+            "num_users_trained",
+            "num_total_datapoints",
+            "total_weight",
+            "user_metrics",
+            "server_statistics",
+        ]
+        return self.get_data_for_keys(keys)
 
     def get_for_aggregation(
         self,
@@ -97,8 +109,8 @@ class ServerlessPFLStore(
         StatisticsType,
     ]:
         keys = ["stats_context_pairs", "all_metrics", "model"]
-        return self._get_data_for_keys(keys)
+        return self.get_data_for_keys(keys)
 
     def get_from_aggregation(self) -> Tuple[ModelType, Metrics]:
         keys = ["model", "all_metrics"]
-        return self._get_data_for_keys(keys)
+        return self.get_data_for_keys(keys)

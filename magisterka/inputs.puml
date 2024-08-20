@@ -1,0 +1,61 @@
+@startuml
+left to right direction
+skinparam dpi 300
+skinparam linetype ortho
+' skinparam maxMessageSize 100
+<style>
+element {
+  ' MinimumWidth 100
+  MaximumWidth 90
+}
+</style>
+
+cloud "Inputs" {
+  package "Model Configuration" {
+    [Model\n(TensorFlow or PyTorch)] as Model
+    [Model Optimizer] as Optimizer
+    [Model Metrics Collectors] as ModelMetrics
+  }
+  package "Training Configuration" {
+    [Neural Network Training Parameters] as NNParams
+    [Federated Training Hyperparameters] as FLParams
+  }
+    package "Dataset" {
+      [Training Dataset] as train
+      [Evaluation Dataset] as eval
+    }
+    package "Differential Privacy" {
+      [Differential Privacy Postprocessors] as DPPostprocessors
+  }
+}
+
+cloud "PFL Framework" { 
+  package "PFL Components" {
+      [Stateful Model] as StatefulModel
+      [Backend] as Backend
+      [Federated Algorithm] as FederatedAlgorithm
+  }
+}
+
+
+cloud "Outputs" {
+  [Trained Model] as trained_model
+  [Training Metrics] as FLMetrics
+}
+
+"Inputs" -[hidden]--> "PFL Framework"
+
+"Model Configuration" ----> StatefulModel
+"Dataset" ----> Backend
+"Differential Privacy" -----> Backend
+"Training Configuration" --> FederatedAlgorithm
+' FederatedAlgorithm <-- "Training Configuration"
+
+Backend --> FederatedAlgorithm
+StatefulModel --> FederatedAlgorithm
+
+FederatedAlgorithm ---> "Outputs"
+' "Outputs" <-[hidden]- "PFL Framework"
+
+
+@enduml

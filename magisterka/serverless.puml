@@ -1,0 +1,41 @@
+@startuml
+skinparam dpi 300
+skinparam sequenceMessageAlign center
+autonumber
+
+participant "Serverless Federated Algorithm" as ServerlessFederatedAlgorithm
+participant "Serverless Backend" as ServerlessBackend
+participant "Context Getter" as ContextGetter
+collections "Client Handlers" as ClientHandler
+participant "Aggregator" as Aggregator
+database DataStore as "Data Store"
+
+ServerlessFederatedAlgorithm --> DataStore : save data
+ServerlessFederatedAlgorithm --> ContextGetter ** : run serverless function
+
+ContextGetter <-- DataStore : get data
+ContextGetter --> ContextGetter : select central context
+ContextGetter --> DataStore : save data
+
+ServerlessFederatedAlgorithm <-- ContextGetter !! : done
+ServerlessFederatedAlgorithm --> DataStore : get data
+ServerlessFederatedAlgorithm --> ServerlessBackend ++ : start training model on clients
+
+ServerlessBackend --> ClientHandler ** : run serverless functions
+
+ClientHandler <-- DataStore : get data
+ClientHandler --> ClientHandler : simulate training
+ClientHandler --> DataStore : save data
+
+ServerlessBackend <-- ClientHandler !! : done
+
+ServerlessFederatedAlgorithm <-- ServerlessBackend -- : model updates from clients
+
+ServerlessFederatedAlgorithm --> Aggregator ** : run serverless function
+
+Aggregator <-- DataStore : get data
+Aggregator --> Aggregator : aggregate model updates
+Aggregator --> DataStore : save data
+
+ServerlessFederatedAlgorithm <-- Aggregator !! : done
+@enduml

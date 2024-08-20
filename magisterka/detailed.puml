@@ -1,0 +1,11 @@
+@startuml
+skinparam dpi 300
+skinparam sequenceMessageAlign center
+autonumber
+
+FederatedAlgorithm --> FederatedAlgorithm : select central context
+FederatedAlgorithm -> Backend : start training model on clients
+Backend --> Backend : simulate training
+FederatedAlgorithm <- Backend : model updates from clients
+FederatedAlgorithm --> FederatedAlgorithm : aggregate model updates
+@enduml

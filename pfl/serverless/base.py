@@ -22,11 +22,11 @@ class ServerlessFunction(Generic[InputType, OutputType]):
         self._store = get_store(dataStoreConfig)
         self.__cold = True
 
-    def run_function(self, inputData: InputType) -> OutputType:
-        return self._with_simulated_startup(self.function, inputData)
+    def run_function(self, *args, **kwargs) -> OutputType:
+        return self._with_simulated_startup(self.function, *args, **kwargs)
 
     @abstractmethod
-    def function(self, inputData: InputType) -> OutputType:
+    def function(self, *args, **kwargs) -> OutputType:
         pass
 
     def _with_simulated_startup(self, fn: callable, *args, **kwargs):
