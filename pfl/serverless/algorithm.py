@@ -1,6 +1,4 @@
 import logging
-from abc import abstractmethod
-import time
 from typing import Generic, List, Optional, Tuple, TypedDict, TypeVar
 
 from pfl.aggregate.base import Backend
@@ -14,12 +12,23 @@ from pfl.internal.platform.selector import get_platform
 from pfl.metrics import Metrics
 from pfl.model.base import ModelType
 from pfl.serverless.aggregator import Aggregator
+from pfl.serverless.benchmarks import (
+    AGGREGATOR,
+    CONTEXT_GETTER,
+    GET_OUTPUT,
+    ITERATION,
+    RUN,
+    SAVE_INPUT,
+    PFLCounter,
+    PFLSizeCounter,
+    PFLTimeCounter,
+)
 from pfl.serverless.context_getter import ContextGetter
-
 from pfl.serverless.stores.base import DataStoreConfig
 from pfl.serverless.stores.simple import SimpleStoreConfig
 from pfl.serverless.stores.utils import create_config, get_store
 from pfl.stats import StatisticsType
+import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -39,21 +48,20 @@ class ServerlessFederatedAlgorithm(
         *,
         send_metrics_to_platform: bool = True,
     ) -> ModelType:
+        PFLCounter.reset()
+        PFLTimeCounter.reset()
+
         callbacks, should_stop, on_train_metrics = self._init(model, callbacks)
 
         store = get_store(config)
         while True:
-            # Step 1
-            # Get instructions from algorithm what to run next.
-            # Can be multiple queries to cohorts of devices.
-            # isntrukcja co ma się dziać
-            # Step 1
-            # Get instructions from algorithm what to run next.
-            # Can be multiple queries to cohorts of devices.
-            # (new_central_contexts, model, all_metrics) = self.get_next_central_contexts(
-            #     model, self._current_central_iteration, algorithm_params, model_train_params, model_eval_params
-            # )
+            PFLTimeCounter.stop(f"{ITERATION}:{PFLCounter.get(ITERATION)!s}")
+            PFLCounter.increment(ITERATION)
+            PFLTimeCounter.start(f"{ITERATION}:{PFLCounter.get(ITERATION)!s}")
 
+            PFLTimeCounter.start(f"{RUN}:{CONTEXT_GETTER}:{PFLCounter.get(ITERATION)!s}")
+
+            PFLTimeCounter.start(f"{SAVE_INPUT}:{CONTEXT_GETTER}:{PFLCounter.get(ITERATION)!s}")
             store.save_data(
                 **{
                     "model": model,
@@ -63,10 +71,15 @@ class ServerlessFederatedAlgorithm(
                     "model_eval_params": model_eval_params,
                 }
             )
+            PFLTimeCounter.stop(f"{SAVE_INPUT}:{CONTEXT_GETTER}:{PFLCounter.get(ITERATION)!s}")
 
             ContextGetter(config).run_function(self)
 
+            PFLTimeCounter.start(f"{GET_OUTPUT}:{CONTEXT_GETTER}:{PFLCounter.get(ITERATION)!s}")
             (new_central_contexts, model, all_metrics) = store.get_from_context_getter()
+            PFLTimeCounter.stop(f"{GET_OUTPUT}:{CONTEXT_GETTER}:{PFLCounter.get(ITERATION)!s}")
+
+            PFLTimeCounter.stop(f"{RUN}:{CONTEXT_GETTER}:{PFLCounter.get(ITERATION)!s}")
 
             if new_central_contexts is None:
                 break
@@ -94,19 +107,21 @@ class ServerlessFederatedAlgorithm(
                     stats_context_pairs.append((central_context, stats))
             # Process statistics and get new model.
 
-            # wazne: agregacja sie tutaj dzieje.
-            # (model, update_metrics) = self.process_aggregated_statistics_from_all_contexts(
-            #     tuple(stats_context_pairs), all_metrics, model
-            # )
-            # all_metrics |= update_metrics
+            PFLTimeCounter.start(f"{RUN}:{AGGREGATOR}:{PFLCounter.get(ITERATION)!s}")
+            PFLTimeCounter.start(f"{SAVE_INPUT}:{AGGREGATOR}:{PFLCounter.get(ITERATION)!s}")
 
             store.save_data(
                 **{"stats_context_pairs": tuple(stats_context_pairs), "all_metrics": all_metrics, "model": model}
             )
+            PFLTimeCounter.stop(f"{SAVE_INPUT}:{AGGREGATOR}:{PFLCounter.get(ITERATION)!s}")
 
             Aggregator(config).run_function(self)
 
-            model, update_metrics = store.get_from_aggregation()
+            PFLTimeCounter.start(f"{GET_OUTPUT}:{AGGREGATOR}:{PFLCounter.get(ITERATION)!s}")
+            model, all_metrics = store.get_from_aggregation()
+            PFLTimeCounter.stop(f"{GET_OUTPUT}:{AGGREGATOR}:{PFLCounter.get(ITERATION)!s}")
+
+            PFLTimeCounter.stop(f"{RUN}:{AGGREGATOR}:{PFLCounter.get(ITERATION)!s}")
 
             # Step 4
             # End-of-iteration callbacks
@@ -128,6 +143,10 @@ class ServerlessFederatedAlgorithm(
             # Calls with central iteration configs used for final round.
             callback.on_train_end(model=model)
 
+        # filename contains the timestamp of the run
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        PFLTimeCounter.save_to_file(output_file=f"time_{timestamp}.csv")
+        PFLSizeCounter.save_to_file(output_file=f"size_{timestamp}.csv")
         return model
 
     def process_aggregated_statistics_serverless(self) -> Tuple[ModelType, Metrics]:

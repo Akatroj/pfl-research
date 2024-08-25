@@ -28,6 +28,7 @@ from pfl.hyperparam.base import (
 from pfl.internal.platform.selector import get_platform
 from pfl.metrics import Metrics, TrainMetricName
 from pfl.model.base import ModelType, StatefulModelType
+from pfl.serverless.benchmarks import AGGREGATOR, CONTEXT_GETTER, ITERATION, RUN, PFLCounter, PFLTimeCounter
 from pfl.stats import StatisticsType
 
 from . import algorithm_utils
@@ -264,14 +265,26 @@ class FederatedAlgorithm(
             on_train_metrics |= callback.on_train_begin(model=model)
 
         central_contexts = None
+        PFLCounter.reset()
+        PFLTimeCounter.reset()
         while True:
+            PFLTimeCounter.stop(f"{ITERATION}:{PFLCounter.get(ITERATION)!s}")
+            PFLCounter.increment(ITERATION)
+            PFLTimeCounter.start(f"{ITERATION}:{PFLCounter.get(ITERATION)!s}")
+
             # isntrukcja co ma się dziać
             # Step 1
             # Get instructions from algorithm what to run next.
             # Can be multiple queries to cohorts of devices.
+
+            PFLTimeCounter.start(f"{RUN}:{CONTEXT_GETTER}:{PFLCounter.get(ITERATION)!s}")
+
             (new_central_contexts, model, all_metrics) = self.get_next_central_contexts(
                 model, self._current_central_iteration, algorithm_params, model_train_params, model_eval_params
             )
+
+            PFLTimeCounter.stop(f"{RUN}:{CONTEXT_GETTER}:{PFLCounter.get(ITERATION)!s}")
+
             if new_central_contexts is None:
                 break
             else:
@@ -299,11 +312,13 @@ class FederatedAlgorithm(
             # Process statistics and get new model.
 
             # wazne: agregacja sie tutaj dzieje.
+            PFLTimeCounter.start(f"{RUN}:{AGGREGATOR}:{PFLCounter.get(ITERATION)!s}")
             (model, update_metrics) = self.process_aggregated_statistics_from_all_contexts(
                 tuple(stats_context_pairs), all_metrics, model
             )
 
             all_metrics |= update_metrics
+            PFLTimeCounter.stop(f"{RUN}:{AGGREGATOR}:{PFLCounter.get(ITERATION)!s}")
 
             # Step 4
             # End-of-iteration callbacks
@@ -324,7 +339,7 @@ class FederatedAlgorithm(
         for callback in callbacks:
             # Calls with central iteration configs used for final round.
             callback.on_train_end(model=model)
-
+        PFLTimeCounter.save_to_file("original.csv")
         return model
 
 

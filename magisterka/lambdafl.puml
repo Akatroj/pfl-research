@@ -1,0 +1,61 @@
+@startuml
+!define RECTANGLE class
+' !pragma layout elk
+
+' skinparam linetype ortho
+
+skinparam rectangle {
+    BackgroundColor<<Participant>> White
+    BorderColor<<Participant>> Black
+}
+
+rectangle "Master Aggregator" as MA
+rectangle "IA1" as IA1
+rectangle "IA2" as IA2
+circle "LA1" as LA1
+circle "LA2" as LA2
+circle "LA3" as LA3
+circle "LA4" as LA4
+rectangle "Participants" as P1 <<Participant>>
+rectangle "Participants" as P2 <<Participant>>
+rectangle "Participants" as P3 <<Participant>>
+
+MA <-down-- IA1
+MA <-down-- IA2
+
+' IA1 ..[hidden].. IA2
+
+IA1 <-down-- LA1
+IA1 <-down-- LA2 
+IA2 <-down-- LA3
+note on link
+    Partially aggregated updates
+end note
+IA2 <-down-- LA4
+
+LA1 <-down- P1
+' note on link
+'   Model updates
+' end note
+LA3 <-down- P2
+LA4 <-down- P3
+
+
+' note right of IA2
+'   Intermediate Aggregators
+' end note
+
+' note left of LA3
+'   Leaf Aggregators
+' end note
+
+' LA2 .[hidden] LANote
+' LA3 .[hidden] LANote
+
+' LANote .left. LA1
+' LANote .right. LA3
+' LANote .[hidden] LA2
+' LANote .[hidden] LA4
+
+
+@enduml

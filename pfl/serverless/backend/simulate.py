@@ -24,6 +24,16 @@ from pfl.metrics import Metrics, Weighted, Zero
 from pfl.model.base import Model
 from pfl.postprocessor.base import Postprocessor
 from pfl.serverless.backend.base import ServerlessBackend
+from pfl.serverless.benchmarks import (
+    CLIENT_HANDLER,
+    CLIENTS,
+    GET_OUTPUT,
+    ITERATION,
+    RUN,
+    SAVE_INPUT,
+    PFLCounter,
+    PFLTimeCounter,
+)
 from pfl.serverless.client import ClientHandler
 from pfl.serverless.stores.base import DataStoreConfig
 from pfl.serverless.stores.utils import get_store
@@ -145,6 +155,7 @@ class SimulatedServerlessBackend(ServerlessBackend):
 
         store = get_store(self._datastore_config)
 
+        PFLTimeCounter.start(f"{SAVE_INPUT}:{CLIENTS}:{PFLCounter.get(ITERATION)!s}")
         store.save_data(
             **{
                 "num_users_trained": num_users_trained,
@@ -155,13 +166,26 @@ class SimulatedServerlessBackend(ServerlessBackend):
                 "central_context": central_context,
             }
         )
+        PFLTimeCounter.stop(f"{SAVE_INPUT}:{CLIENTS}:{PFLCounter.get(ITERATION)!s}")
 
-        print("Starting simulation")
+        PFLCounter.reset(CLIENTS)
         for user_dataset, local_seed in selected_dataset.get_cohort(cohort_size):
-            print(f"Starting user {user_dataset.user_id}")
+            PFLCounter.increment(CLIENTS)
+            PFLTimeCounter.start(f"{RUN}:{CLIENT_HANDLER}:{PFLCounter.get(ITERATION)!s}:{PFLCounter.get(CLIENTS)!s}")
+
+            PFLTimeCounter.start(
+                f"{SAVE_INPUT}:{CLIENT_HANDLER}:{PFLCounter.get(ITERATION)!s}:{PFLCounter.get(CLIENTS)!s}"
+            )
             store.save_data(**{"user_dataset": user_dataset, "local_seed": local_seed})
+            PFLTimeCounter.stop(
+                f"{SAVE_INPUT}:{CLIENT_HANDLER}:{PFLCounter.get(ITERATION)!s}:{PFLCounter.get(CLIENTS)!s}"
+            )
+
             ClientHandler(self._datastore_config).run_function(training_algorithm, self)
 
+            PFLTimeCounter.stop(f"{RUN}:{CLIENT_HANDLER}:{PFLCounter.get(ITERATION)!s}:{PFLCounter.get(CLIENTS)!s}")
+
+        PFLTimeCounter.start(f"{GET_OUTPUT}:{CLIENTS}:{PFLCounter.get(ITERATION)!s}")
         (
             num_users_trained,
             num_total_datapoints,
@@ -169,6 +193,7 @@ class SimulatedServerlessBackend(ServerlessBackend):
             user_metrics,
             server_statistics,
         ) = store.get_from_clients()
+        PFLTimeCounter.stop(f"{GET_OUTPUT}:{CLIENTS}:{PFLCounter.get(ITERATION)!s}")
 
         model_update, total_metrics = self.get_model_update_and_metrics(
             central_context,

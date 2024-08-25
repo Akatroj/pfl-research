@@ -1,0 +1,14 @@
+@startuml
+collections Clients
+participant Server
+
+loop Until model is trained
+    Server -> Clients : serve model
+    Clients -> Clients : train model locally
+    Clients -> Server : send model updates
+    Server -> Server : aggregate updates
+    Server -> Server : update the model
+end
+
+
+@enduml

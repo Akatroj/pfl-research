@@ -10,6 +10,7 @@ from pfl.context import CentralContext
 from pfl.hyperparam.base import AlgorithmHyperParamsType, ModelHyperParamsType
 from pfl.metrics import Metrics
 from pfl.model.base import ModelType
+from pfl.serverless.benchmarks import PFLCounter, PFLSizeCounter
 from pfl.stats import StatisticsType
 
 
@@ -37,15 +38,19 @@ class ServerlessDataStore:
         """Save the data for a specific key"""
 
     def get_data_for_key(self, key):
-        print(f"unpickling {key}")
-        result = dill.loads(self._get_data_for_key(key))
-        print(f"done unpickling {key}")
-        return result
+        # print(f"unpickling {key}")
+        pickled_data = self._get_data_for_key(key)
+        slug = f"READ:{key}"
+        PFLSizeCounter.record_size(f"{slug}:{PFLCounter.get_and_increment(slug)}", pickled_data)
+        # print(f"done unpickling {key}")
+        return dill.loads(pickled_data)
 
     def save_data_for_key(self, key, data) -> None:
-        print(f"pickling {key}")
+        # print(f"pickling {key}")
         pickled_data = dill.dumps(data)
-        print(f"done pickling {key}")
+        slug = f"WRITE:{key}"
+        PFLSizeCounter.record_size(f"{slug}:{PFLCounter.get_and_increment(slug)}", pickled_data)
+        # print(f"done pickling {key}")
         return self._save_data_for_key(key, pickled_data)
 
     def save_data(self, **kwargs):

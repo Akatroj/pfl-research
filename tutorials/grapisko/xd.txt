@@ -1,0 +1,8 @@
+robimy tak
+1. ile czasu zajmuje wykonanie każdego kompoentu w izolacji (avg z kilku runów) tu też fedprox (może scaffold ale chyba nie zadziała)
+2. ile czasu zajmuje serializacja, deserializacja, można tutaj też rozmiar danych, przeliczyć koszty od grapy w redisie i s3
+3. ile czasu zajmuje wszystko, vs ile czasu zajmuje client-server
+4. koszty wykonania w chmurze (minuta czasu na ec2 + inwokacja lambdy)
+5. transfer
+6. opisać sposób zbierania danych?
+
