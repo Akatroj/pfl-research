@@ -25,6 +25,7 @@ from pfl.model.base import Model
 from pfl.postprocessor.base import Postprocessor
 from pfl.serverless.backend.base import ServerlessBackend
 from pfl.serverless.benchmarks import (
+    BACKEND,
     CLIENT_HANDLER,
     CLIENTS,
     GET_OUTPUT,
@@ -142,6 +143,7 @@ class SimulatedServerlessBackend(ServerlessBackend):
             ``total weight`` is the denominator for a potentially weighted
             aggregation.
         """
+        PFLTimeCounter.start(f"{RUN}:{BACKEND}:{PFLCounter.get(ITERATION)!s}")
         (
             cohort_size,
             population,
@@ -206,6 +208,7 @@ class SimulatedServerlessBackend(ServerlessBackend):
         )
 
         model_update = self.apply_differential_privacy(central_context, model_update, total_metrics)
+        PFLTimeCounter.stop(f"{RUN}:{BACKEND}:{PFLCounter.get(ITERATION)!s}")
 
         return model_update, total_metrics
 

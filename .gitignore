@@ -1,6 +1,6 @@
 # From https://raw.githubusercontent.com/github/gitignore/main/Python.gitignore
 
- Byte-compiled / optimized / DLL files
+Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
@@ -169,3 +169,9 @@ docs/build
 benchmarks/data
 benchmarks/checkpoints/
 benchmarks/metrics.csv
+
+**/*.png
+**/*.csv
+**/*.h5
+**/*.p
+**/*.tar.gz

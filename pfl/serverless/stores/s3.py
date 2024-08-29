@@ -11,6 +11,7 @@ class S3ConfigParams(ConfigParams):
     bucket_name: str
     aws_access_key_id: str
     aws_secret_access_key: str
+    aws_session_token: str
     region_name: str
 
 
@@ -30,6 +31,7 @@ class S3Store(ServerlessPFLStore):
             "s3",
             aws_access_key_id=config.params.aws_access_key_id,
             aws_secret_access_key=config.params.aws_secret_access_key,
+            aws_session_token=config.params.aws_session_token,
             region_name=config.params.region_name,
         )
 
