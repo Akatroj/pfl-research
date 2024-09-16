@@ -29,7 +29,7 @@ def _make_proximal_train_step(model):
             loss = tf.reduce_mean(keras_model.loss(labels, preds))
             for model_var in keras_model.trainable_variables:
                 loss += mu / 2 * tf.norm(
-                    model_var - global_weights[model_var.name], 2)**2
+                    model_var - global_weights.get(model_var.name, 0), 2)**2
 
         gradients = tape.gradient(loss, keras_model.trainable_variables)
         keras_model.optimizer.apply_gradients(

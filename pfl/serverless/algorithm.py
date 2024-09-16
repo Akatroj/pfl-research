@@ -54,6 +54,7 @@ class ServerlessFederatedAlgorithm(
         callbacks, should_stop, on_train_metrics = self._init(model, callbacks)
 
         store = get_store(config)
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         while True:
             PFLTimeCounter.stop(f"{ITERATION}:{PFLCounter.get(ITERATION)!s}")
             PFLCounter.increment(ITERATION)
@@ -138,13 +139,14 @@ class ServerlessFederatedAlgorithm(
             if should_stop:
                 break
             self._current_central_iteration += 1
+            PFLTimeCounter.save_to_file(output_file=f"time_{timestamp}.csv")
+            PFLSizeCounter.save_to_file(output_file=f"size_{timestamp}.csv")
 
         for callback in callbacks:
             # Calls with central iteration configs used for final round.
             callback.on_train_end(model=model)
 
         # filename contains the timestamp of the run
-        timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         PFLTimeCounter.save_to_file(output_file=f"time_{timestamp}.csv")
         PFLSizeCounter.save_to_file(output_file=f"size_{timestamp}.csv")
         return model

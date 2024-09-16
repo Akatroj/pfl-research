@@ -74,6 +74,9 @@ class FrameworkBridgeFactory:
         if framework == MLFramework.PYTORCH:
             from .pytorch import scaffold as scaffold_pt
             return scaffold_pt.PyTorchSCAFFOLDBridge
+        elif framework == MLFramework.TENSORFLOW:
+            from .tensorflow import scaffold as scaffold_tf
+            return scaffold_tf.TfSCAFFOLDBridge
         else:
             raise NotImplementedError("SCAFFOLD bridge not available "
                                       f"for framework {framework}")

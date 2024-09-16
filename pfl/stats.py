@@ -309,6 +309,7 @@ class MappedVectorStatistics(WeightedStatistics[Tensor]):
         """
         assert set(self._data.keys()) == set(
             other.keys()), "Statistics objects needs to have the same keys."
+
         added_raw_stats = {k: self[k] + other[k] for k in self._data}
         stats: MappedVectorStatisticsType = self.__class__(added_raw_stats,
                                                            weight=self.weight +

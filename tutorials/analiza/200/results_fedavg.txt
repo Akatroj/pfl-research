@@ -1,0 +1,56 @@
+Metrics at iteration 0 ():
+    Central val | accuracy                            : 0.10249999910593033
+    Central val | loss                                : 2.340395212173462
+    Central val | number of data points               : 10000.0
+    Train population | number of devices              : 0
+    Train population | number of data points          : 0.0
+    Train population | accuracy before local training : 0.08139535039663315
+    Train population | loss before local training     : 2.321162223815918
+    Train population | accuracy after local training  : 0.09302325546741486
+    Train population | loss after local training      : 2.6734330654144287
+    Train population | total weight                   : 1.0
+    Number of parameters                              : 11181642
+    Val population | number of devices                : 0
+    Val population | number of data points            : 0.0
+    Val population | accuracy before local training   : 0.18867924809455872
+    Val population | loss before local training       : 2.3249611854553223
+    Learning rate                                     : 1.0
+Metrics at iteration 1 ():
+    Train population | number of devices              : 0
+    Train population | number of data points          : 0.0
+    Train population | total weight                   : 1.0
+    Number of parameters                              : 11181642
+    Learning rate                                     : 1.0
+Metrics at iteration 2 ():
+    Train population | number of devices              : 0
+    Train population | number of data points          : 0.0
+    Train population | total weight                   : 1.0
+    Number of parameters                              : 11181642
+    Learning rate                                     : 1.0
+Metrics at iteration 3 ():
+    Train population | number of devices              : 0
+    Train population | number of data points          : 0.0
+    Train population | total weight                   : 1.0
+    Number of parameters                              : 11181642
+    Learning rate                                     : 1.0
+2024-08-31 15:41:54.884665: W tensorflow/tsl/framework/cpu_allocator_impl.cc:83] Allocation of 655360000 exceeds 10% of free system memory.
+Metrics at iteration 4 ():
+WARNING:tensorflow:5 out of the last 13 calls to <function _run_result_graph.<locals>.result_graph at 0x7fdb57a81d80> triggered tf.function retracing. Tracing is expensive and the excessive number of tracings could be due to (1) creating @tf.function repeatedly in a loop, (2) passing tensors with different shapes, (3) passing Python objects instead of tensors. For (1), please define your @tf.function outside of the loop. For (2), @tf.function has reduce_retracing=True option that can avoid unnecessary retracing. For (3), please refer to https://www.tensorflow.org/guide/function#controlling_retracing and https://www.tensorflow.org/api_docs/python/tf/function for  more details.
+WARNING:tensorflow:5 out of the last 13 calls to <function _run_result_graph.<locals>.result_graph at 0x7fdb57a831c0> triggered tf.function retracing. Tracing is expensive and the excessive number of tracings could be due to (1) creating @tf.function repeatedly in a loop, (2) passing tensors with different shapes, (3) passing Python objects instead of tensors. For (1), please define your @tf.function outside of the loop. For (2), @tf.function has reduce_retracing=True option that can avoid unnecessary retracing. For (3), please refer to https://www.tensorflow.org/guide/function#controlling_retracing and https://www.tensorflow.org/api_docs/python/tf/function for  more details.
+    Train population | number of devices              : 0
+    Train population | number of data points          : 0.0
+    Train population | accuracy before local training : 0.125
+    Train population | loss before local training     : 2.341374158859253
+    Train population | accuracy after local training  : 0.125
+    Train population | loss after local training      : 2.341374158859253
+    Train population | total weight                   : 1.0
+    Number of parameters                              : 11181642
+    Val population | number of devices                : 0
+    Val population | number of data points            : 0.0
+    Val population | accuracy before local training   : 0.12068965286016464
+    Val population | loss before local training       : 2.352950096130371
+    Learning rate                                     : 1.0
+    Central val | accuracy                            : 0.10249999910593033
+    Central val | loss                                : 2.340395212173462
+    Central val | number of data points               : 10000.0
+Process 13970 dead!

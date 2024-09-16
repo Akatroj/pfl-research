@@ -7,7 +7,12 @@ import numpy as np
 import tensorflow as tf
 
 # HAS TO BE IN THIS ORDER
+from pfl.aggregate.simulate import SimulatedBackend
+from pfl.data.tensorflow import TFDataDataset, TFFederatedDataset
+from pfl.data.user_state import InMemoryUserStateStorage
 from pfl.model.tensorflow import TFModel  # noqa: W291
+from tensorflow.keras.optimizers import SGD
+from model.tf2.cnn import resnet18, simple_cnn
 
 
 import pfl.algorithm.serverless as serverless
@@ -32,18 +37,15 @@ np.random.seed(7)
 
 
 def prepare_dataset():
-    exclude_classes = [1, 3, 4, 5, 6, 7, 8, 9]
-    print("ok")
+    # exclude_classes = [1, 3, 4, 5, 6, 7, 8, 9]
+    exclude_classes = []
     train_images, train_labels, channel_means, channel_stddevs = load_and_preprocess(
-        "./data/cifar10_train.p", exclude_classes=exclude_classes
+        "../benchmarks/data/cifar10/cifar10_train.p", exclude_classes=exclude_classes
     )
-    print("ok?")
 
     val_images, val_labels, _, _ = load_and_preprocess(
-        "./data/cifar10_test.p", channel_means, channel_stddevs, exclude_classes=exclude_classes
+        "../benchmarks/data/cifar10/cifar10_test.p", channel_means, channel_stddevs, exclude_classes=exclude_classes
     )
-
-    print("ok??")
 
     # Convert labels to one-hot vectors.
     one_hots = np.eye(10)
@@ -52,7 +54,6 @@ def prepare_dataset():
 
     train_data_sampler = get_data_sampler("random", len(train_images))
     val_data_sampler = get_data_sampler("random", len(val_images))
-    print("ok???")
 
     def user_dataset_len_sampler():
         while True:
@@ -63,7 +64,6 @@ def prepare_dataset():
     train_federated_dataset = ArtificialFederatedDataset.from_slices(
         [train_images, train_labels], train_data_sampler, user_dataset_len_sampler
     )
-    print("ok????????")
 
     val_federated_dataset = ArtificialFederatedDataset.from_slices(
         [val_images, val_labels], val_data_sampler, user_dataset_len_sampler
@@ -76,11 +76,19 @@ def prepare_dataset():
 train_federated_dataset, val_federated_dataset, central_data = prepare_dataset()
 print("Datasets prepared.")
 
-keras_model = tf.keras.models.load_model("keras_model.h5")
+# keras_model = tf.keras.models.load_model("keras_model.h5")
+# keras_model = simple_cnn((32, 32, 3), 10)
+# keras_model = resnet18((32, 32, 3), 10)
+# keras_model.compile(SGD(0.01), loss="categorical_crossentropy")
+# # keras_model.save("simple_cnn.h5")
+# keras_model.save("resnet18.h5")
+keras_model = tf.keras.models.load_model("resnet18.h5")
+# keras_model = tf.keras.models.load_model("./tutorials/keras_model.h5")
+
 metrics = {"accuracy": tf.keras.metrics.CategoricalAccuracy(), "loss": tf.keras.metrics.CategoricalCrossentropy()}
 model = TFModel(model=keras_model, central_optimizer=tf.keras.optimizers.SGD(1.0), metrics=metrics)
 
-cohort_size = 200
+cohort_size = 20
 central_num_iterations = 5
 population = 1e7
 
@@ -103,58 +111,56 @@ population = 1e7
 
 # config = create_config("redis", uri="redis://localhost:6379/0")
 # config = create_config("mongo", uri="mongodb://localhost:27017")
-config = create_config(
-    "s3",
-    bucket_name="pfl-bucket-agh",
-    aws_access_key_id="",
-    aws_secret_access_key="",  # noqa: S106
-    aws_session_token="",  # noqa: S106
-    region_name="us-east-1",
-)
+# config = create_config(
+#     "s3",
+#     bucket_name="pfl-bucket-agh",
+#     aws_access_key_id="",
+#     aws_secret_access_key="",  # noqa: S106
+#     aws_session_token="",  # noqa: S106
+#     region_name="us-east-1",
+# )
 # config = create_config("simple")
 
-simulated_backend = SimulatedServerlessBackend(
-    config=config, training_data=train_federated_dataset, val_data=val_federated_dataset, postprocessors=[]
+simulated_backend = SimulatedBackend(
+    training_data=train_federated_dataset, val_data=val_federated_dataset, postprocessors=[]
 )
+# simulated_backend = SimulatedServerlessBackend(
+#     config=config, training_data=train_federated_dataset, val_data=val_federated_dataset, postprocessors=[]
+# )
 
 
 os.environ["PFL_GRAPH_CACHE"] = "false"
 
-# importlib.reload(serverless)
-# # %load_ext autoreload
-# # %autoreload 2
-
-# %load_ext autoreload
-# %autoreload
-
-model_train_params = NNTrainHyperParams(local_learning_rate=0.05, local_num_epochs=2, local_batch_size=5)
+model_train_params = NNTrainHyperParams(local_learning_rate=0.05, local_num_epochs=5, local_batch_size=5)
 
 # Do full-batch evaluation to run faster.
 model_eval_params = NNEvalHyperParams(local_batch_size=None)
 
+
+callbacks = [CentralEvaluationCallback(central_data, model_eval_params, 4)]
+
+algorithm = FederatedAveraging()
 algorithm_params = NNAlgorithmParams(
     central_num_iterations=central_num_iterations,
     evaluation_frequency=4,
     train_cohort_size=cohort_size,
     val_cohort_size=10,
 )
-
-callbacks = [CentralEvaluationCallback(central_data, model_eval_params, 4)]
-
-# algorithm = serverless.ServerlessFederatedAveraging()
-algorithm = serverless.ServerlessFedProx()
-algorithm_params = serverless.FedProxParams(
-    central_num_iterations=central_num_iterations,
-    evaluation_frequency=4,
-    train_cohort_size=cohort_size,
-    val_cohort_size=10,
-    mu=0.1,
-)
+# algorithm = serverless.ServerlessFedProx()
+# algorithm = serverless.ServerlessSCAFFOLD()
+# algorithm_params = serverless.SCAFFOLDParams(
+#     central_num_iterations=central_num_iterations,
+#     evaluation_frequency=4,
+#     train_cohort_size=cohort_size,
+#     val_cohort_size=10,
+#     population=1e6,
+#     use_gradient_as_control_variate=False,
+#     user_state_storage=InMemoryUserStateStorage(),
+# )
 
 
 print("Running federated learning...")
 algorithm.run(
-    config=config,
     backend=simulated_backend,
     model=model,
     algorithm_params=algorithm_params,

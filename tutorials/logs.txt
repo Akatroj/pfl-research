@@ -1,0 +1,98 @@
+2024-08-31 17:36:47.277356: I tensorflow/tsl/cuda/cudart_stub.cc:28] Could not find cuda drivers on your machine, GPU will not be used.
+2024-08-31 17:36:47.327382: E tensorflow/compiler/xla/stream_executor/cuda/cuda_dnn.cc:9342] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+2024-08-31 17:36:47.327824: E tensorflow/compiler/xla/stream_executor/cuda/cuda_fft.cc:609] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2024-08-31 17:36:47.328315: E tensorflow/compiler/xla/stream_executor/cuda/cuda_blas.cc:1518] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+2024-08-31 17:36:47.336535: I tensorflow/tsl/cuda/cudart_stub.cc:28] Could not find cuda drivers on your machine, GPU will not be used.
+2024-08-31 17:36:47.337171: I tensorflow/core/platform/cpu_feature_guard.cc:182] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2024-08-31 17:36:48.742293: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT
+WARNING:tensorflow:From /mnt/c/Users/Pawel/Coding/STUDIA/magisterus/fedless_new/pfl-research/pfl/internal/ops/tensorflow_ops.py:112: is_gpu_available (from tensorflow.python.framework.test_util) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use `tf.config.list_physical_devices('GPU')` instead.
+2024-08-31 17:36:53.740345: I tensorflow/compiler/xla/stream_executor/cuda/cuda_gpu_executor.cc:880] could not open file to read NUMA node: /sys/bus/pci/devices/0000:01:00.0/numa_node
+Your kernel may have been built without NUMA support.
+2024-08-31 17:36:53.741532: W tensorflow/core/common_runtime/gpu/gpu_device.cc:2211] Cannot dlopen some GPU libraries. Please make sure the missing libraries mentioned above are installed properly if you would like to use GPU. Follow the guide at https://www.tensorflow.org/install/gpu for how to download and setup the required libraries for your platform.
+Skipping registering GPU devices...
+2024-08-31 17:36:53.993096: I tensorflow/compiler/xla/stream_executor/cuda/cuda_gpu_executor.cc:880] could not open file to read NUMA node: /sys/bus/pci/devices/0000:01:00.0/numa_node
+Your kernel may have been built without NUMA support.
+2024-08-31 17:36:53.993555: W tensorflow/core/common_runtime/gpu/gpu_device.cc:2211] Cannot dlopen some GPU libraries. Please make sure the missing libraries mentioned above are installed properly if you would like to use GPU. Follow the guide at https://www.tensorflow.org/install/gpu for how to download and setup the required libraries for your platform.
+Skipping registering GPU devices...
+/home/pdymara/.cache/pypoetry/virtualenvs/pfl-benchmarks-1et6TfbS-py3.10/lib/python3.10/site-packages/tensorflow_addons/utils/tfa_eol_msg.py:23: UserWarning: 
+
+TensorFlow Addons (TFA) has ended development and introduction of new features.
+TFA has entered a minimal maintenance and release mode until a planned end of life in May 2024.
+Please modify downstream libraries to take dependencies from other repositories in our TensorFlow community (e.g. Keras, Keras-CV, and Keras-NLP). 
+
+For more information see: https://github.com/tensorflow/addons/issues/2807 
+
+  warnings.warn(
+/home/pdymara/.cache/pypoetry/virtualenvs/pfl-benchmarks-1et6TfbS-py3.10/lib/python3.10/site-packages/tensorflow_addons/utils/ensure_tf_install.py:53: UserWarning: Tensorflow Addons supports using Python ops for all Tensorflow versions above or equal to 2.11.0 and strictly below 2.14.0 (nightly versions are not supported). 
+ The versions of TensorFlow you are currently using is 2.14.0 and is not supported. 
+Some things might work, some things might not.
+If you were to encounter a bug, do not file an issue.
+If you want to make sure you're using a tested and supported configuration, either change the TensorFlow version or the TensorFlow Addons's version. 
+You can find the compatibility matrix in TensorFlow Addon's readme:
+https://github.com/tensorflow/addons
+  warnings.warn(
+2024-08-31 17:37:55.639332: W tensorflow/tsl/framework/cpu_allocator_impl.cc:83] Allocation of 245760000 exceeds 10% of free system memory.
+2024-08-31 17:37:56.243780: W tensorflow/tsl/framework/cpu_allocator_impl.cc:83] Allocation of 655360000 exceeds 10% of free system memory.
+2024-08-31 17:38:05.524407: W tensorflow/tsl/framework/cpu_allocator_impl.cc:83] Allocation of 655360000 exceeds 10% of free system memory.
+2024-08-31 17:38:05.809512: W tensorflow/tsl/framework/cpu_allocator_impl.cc:83] Allocation of 655360000 exceeds 10% of free system memory.
+2024-08-31 17:38:05.939981: W tensorflow/tsl/framework/cpu_allocator_impl.cc:83] Allocation of 655360000 exceeds 10% of free system memory.
+WARNING:tensorflow:5 out of the last 5 calls to <function _run_data_to_state_graph.<locals>.data_to_state_graph at 0x7f7d6c2b6dd0> triggered tf.function retracing. Tracing is expensive and the excessive number of tracings could be due to (1) creating @tf.function repeatedly in a loop, (2) passing tensors with different shapes, (3) passing Python objects instead of tensors. For (1), please define your @tf.function outside of the loop. For (2), @tf.function has reduce_retracing=True option that can avoid unnecessary retracing. For (3), please refer to https://www.tensorflow.org/guide/function#controlling_retracing and https://www.tensorflow.org/api_docs/python/tf/function for  more details.
+WARNING:tensorflow:6 out of the last 6 calls to <function _run_data_to_state_graph.<locals>.data_to_state_graph at 0x7f7d647b0940> triggered tf.function retracing. Tracing is expensive and the excessive number of tracings could be due to (1) creating @tf.function repeatedly in a loop, (2) passing tensors with different shapes, (3) passing Python objects instead of tensors. For (1), please define your @tf.function outside of the loop. For (2), @tf.function has reduce_retracing=True option that can avoid unnecessary retracing. For (3), please refer to https://www.tensorflow.org/guide/function#controlling_retracing and https://www.tensorflow.org/api_docs/python/tf/function for  more details.
+WARNING:tensorflow:5 out of the last 5 calls to <function TFModel._forward_prop at 0x7f7d6c45fe20> triggered tf.function retracing. Tracing is expensive and the excessive number of tracings could be due to (1) creating @tf.function repeatedly in a loop, (2) passing tensors with different shapes, (3) passing Python objects instead of tensors. For (1), please define your @tf.function outside of the loop. For (2), @tf.function has reduce_retracing=True option that can avoid unnecessary retracing. For (3), please refer to https://www.tensorflow.org/guide/function#controlling_retracing and https://www.tensorflow.org/api_docs/python/tf/function for  more details.
+WARNING:tensorflow:6 out of the last 6 calls to <function TFModel._forward_prop at 0x7f7d7c5ad090> triggered tf.function retracing. Tracing is expensive and the excessive number of tracings could be due to (1) creating @tf.function repeatedly in a loop, (2) passing tensors with different shapes, (3) passing Python objects instead of tensors. For (1), please define your @tf.function outside of the loop. For (2), @tf.function has reduce_retracing=True option that can avoid unnecessary retracing. For (3), please refer to https://www.tensorflow.org/guide/function#controlling_retracing and https://www.tensorflow.org/api_docs/python/tf/function for  more details.
+TensorFlow version: 2.14.0
+Datasets prepared.
+Running federated learning...
+Traceback (most recent call last):
+  File "/mnt/c/Users/Pawel/Coding/STUDIA/magisterus/fedless_new/pfl-research/tutorials/konczymy_ten_syf.py", line 158, in <module>
+    algorithm.run(
+  File "/mnt/c/Users/Pawel/Coding/STUDIA/magisterus/fedless_new/pfl-research/pfl/serverless/algorithm.py", line 97, in run
+    results: List[Tuple[StatisticsType, Metrics]] = algorithm_utils.run_train_eval(
+  File "/mnt/c/Users/Pawel/Coding/STUDIA/magisterus/fedless_new/pfl-research/pfl/algorithm/algorithm_utils.py", line 65, in run_train_eval
+    return asyncio.get_event_loop().run_until_complete(run_all_iterations())
+  File "/home/pdymara/.cache/pypoetry/virtualenvs/pfl-benchmarks-1et6TfbS-py3.10/lib/python3.10/site-packages/nest_asyncio.py", line 98, in run_until_complete
+    return f.result()
+  File "/usr/lib/python3.10/asyncio/futures.py", line 201, in result
+    raise self._exception.with_traceback(self._exception_tb)
+  File "/usr/lib/python3.10/asyncio/tasks.py", line 234, in __step
+    result = coro.throw(exc)
+  File "/mnt/c/Users/Pawel/Coding/STUDIA/magisterus/fedless_new/pfl-research/pfl/algorithm/algorithm_utils.py", line 60, in run_all_iterations
+    return await asyncio.gather(*[
+  File "/usr/lib/python3.10/asyncio/tasks.py", line 304, in __wakeup
+    future.result()
+  File "/usr/lib/python3.10/asyncio/tasks.py", line 232, in __step
+    result = coro.send(None)
+  File "/mnt/c/Users/Pawel/Coding/STUDIA/magisterus/fedless_new/pfl-research/pfl/algorithm/algorithm_utils.py", line 54, in run_iteration
+    return await backend.async_gather_results(
+  File "/mnt/c/Users/Pawel/Coding/STUDIA/magisterus/fedless_new/pfl-research/pfl/serverless/backend/simulate.py", line 187, in async_gather_results
+    ClientHandler(self._datastore_config).run_function(training_algorithm, self)
+  File "/mnt/c/Users/Pawel/Coding/STUDIA/magisterus/fedless_new/pfl-research/pfl/serverless/base.py", line 26, in run_function
+    return self._with_simulated_startup(self.function, *args, **kwargs)
+  File "/mnt/c/Users/Pawel/Coding/STUDIA/magisterus/fedless_new/pfl-research/pfl/serverless/base.py", line 38, in _with_simulated_startup
+    return fn(*args, **kwargs)
+  File "/mnt/c/Users/Pawel/Coding/STUDIA/magisterus/fedless_new/pfl-research/pfl/serverless/client.py", line 43, in function
+    user_statistics, metrics_one_user = algorithm.simulate_one_user(model, user_dataset, central_context)
+  File "/mnt/c/Users/Pawel/Coding/STUDIA/magisterus/fedless_new/pfl-research/pfl/serverless/test.py", line 131, in simulate_one_user
+    statistics, train_metrics = self.train_one_user(
+  File "/mnt/c/Users/Pawel/Coding/STUDIA/magisterus/fedless_new/pfl-research/pfl/algorithm/serverless/scaffold.py", line 141, in train_one_user
+    bridges.scaffold_bridge().do_control_variate_sgd(
+  File "/mnt/c/Users/Pawel/Coding/STUDIA/magisterus/fedless_new/pfl-research/pfl/internal/bridge/tensorflow/scaffold.py", line 71, in do_control_variate_sgd
+    model.do_multiple_epochs_of(
+  File "/mnt/c/Users/Pawel/Coding/STUDIA/magisterus/fedless_new/pfl-research/pfl/model/tensorflow.py", line 318, in do_multiple_epochs_of
+    tensorflow_ops.try_cached_call(train_step_fn,
+  File "/mnt/c/Users/Pawel/Coding/STUDIA/magisterus/fedless_new/pfl-research/pfl/internal/ops/tensorflow_ops.py", line 66, in try_cached_call
+    return fn(*args, **kwargs)
+  File "/home/pdymara/.cache/pypoetry/virtualenvs/pfl-benchmarks-1et6TfbS-py3.10/lib/python3.10/site-packages/tensorflow/python/util/traceback_utils.py", line 153, in error_handler
+    raise e.with_traceback(filtered_tb) from None
+  File "/tmp/__autograph_generated_file1grle768.py", line 14, in tf___train_step
+    ag__.ld(model).accumulated_gradients = [ag__.ld(accum_grad) + ag__.ld(grad) for (accum_grad, grad) in ag__.converted_call(ag__.ld(zip), (ag__.ld(model).accumulated_gradients, ag__.ld(gradients)), None, fscope)]
+AttributeError: in user code:
+
+    File "/mnt/c/Users/Pawel/Coding/STUDIA/magisterus/fedless_new/pfl-research/pfl/internal/bridge/tensorflow/scaffold.py", line 36, in _train_step  *
+        model.accumulated_gradients = [
+
+    AttributeError: 'TFModel' object has no attribute 'accumulated_gradients'
+

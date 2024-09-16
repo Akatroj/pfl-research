@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+import gridfs
 import pymongo
 from typing_extensions import override
 
@@ -22,17 +23,20 @@ class MongoStoreConfig(DataStoreConfig):
 
 class MongoStore(ServerlessPFLStore):
     DB_NAME = "pfl_data"
-    COLLECTION_NAME = "data"
 
     def __init__(self, config: MongoStoreConfig) -> None:
         super().__init__(config)
         self._client = pymongo.MongoClient(config.params.uri)
         self._db = self._client[MongoStore.DB_NAME]
+        self._fs = gridfs.GridFS(self._db)
 
     @override
     def _get_data_for_key(self, key):
-        return self._db[MongoStore.COLLECTION_NAME].find_one({"key": key})["data"]
+        return self._fs.get_last_version(key).read()
 
     @override
     def _save_data_for_key(self, key, data) -> None:
-        self._db[MongoStore.COLLECTION_NAME].update_one({"key": key}, {"$set": {"data": data}}, upsert=True)
+        existing_file = self._fs.find_one({"filename": key})
+        if existing_file:
+            self._fs.delete(file_id=existing_file._id)
+        self._fs.put(data, filename=key)

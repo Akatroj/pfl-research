@@ -173,6 +173,7 @@ class SimulatedServerlessBackend(ServerlessBackend):
         PFLCounter.reset(CLIENTS)
         for user_dataset, local_seed in selected_dataset.get_cohort(cohort_size):
             PFLCounter.increment(CLIENTS)
+            user_dataset.user_id = PFLCounter.get(CLIENTS)
             PFLTimeCounter.start(f"{RUN}:{CLIENT_HANDLER}:{PFLCounter.get(ITERATION)!s}:{PFLCounter.get(CLIENTS)!s}")
 
             PFLTimeCounter.start(

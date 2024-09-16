@@ -205,6 +205,10 @@ class Dataset(AbstractDataset):
     def user_id(self) -> Optional[str]:
         return self._user_id
 
+    @user_id.setter
+    def user_id(self, value):
+        self._user_id = value
+
     @property
     def metadata(self) -> Dict[str, Any]:
         return self._metadata

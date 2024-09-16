@@ -3,6 +3,7 @@
 Algorithms of base class :class:`~pfl.algorithm.base.FederatedAlgorithm` implement local training of models and processing of central model updates. It is these two parts of the end-to-end training loop that define the behaviour of a specific federated algorithm. The remaining parts define the private federated learning framework itself and do not change with different training algorithms.
 """
 
+import datetime
 import json
 import logging
 import os
@@ -339,7 +340,8 @@ class FederatedAlgorithm(
         for callback in callbacks:
             # Calls with central iteration configs used for final round.
             callback.on_train_end(model=model)
-        PFLTimeCounter.save_to_file("original.csv")
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        PFLTimeCounter.save_to_file(output_file=f"original_time_{timestamp}.csv")
         return model
 
 
